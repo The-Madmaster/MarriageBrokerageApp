@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.marriagebureau.usermanagement.model.User;
+import com.marriagebureau.entity.User;
 import com.marriagebureau.usermanagement.repository.UserRepository; // Added for findById
 
 @Service

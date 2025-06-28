@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.marriagebureau.usermanagement.model.User;
+import com.marriagebureau.entity.User;
 import com.marriagebureau.usermanagement.service.UserService; // Added for List<User>
 
 @RestController

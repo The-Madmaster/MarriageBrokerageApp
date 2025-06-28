@@ -1,0 +1,11 @@
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/MarriageBureauSoftwareApplication.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/config/SecurityConfig.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/Gender.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/MaritalStatus.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/Profile.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/User.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/UserRole.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/HomeController.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/UserController.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/repository/UserRepository.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/UserService.java

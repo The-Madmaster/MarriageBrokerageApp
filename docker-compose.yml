@@ -3,20 +3,39 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: Mahiroot@33311333 # <<<<<<< IMPORTANT: CHANGE THIS TO A STRONG, UNIQUE PASSWORD
+      MYSQL_ROOT_PASSWORD: Mahiroot@33311333
       MYSQL_DATABASE: marriage_bureau_db
       MYSQL_USER: springuser
-      MYSQL_PASSWORD: Mahispring@33311333 # <<<<<<< IMPORTANT: CHANGE THIS TO A STRONG, UNIQUE PASSWORD
+      MYSQL_PASSWORD: Mahispring@33311333
     ports:
-      - "3306:3306" # This maps the container's 3306 to the Codespace's 3306
+      - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql # This persists your database data
-      # Optional: Uncomment and configure this if you have an initial SQL script (e.g., schema.sql, data.sql)
-      # - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-      start_period: 10s # Give MySQL a bit more time to start initially
+      start_period: 10s
+
+  # New Service: Spring Boot Application
+  app:
+    build: . # This tells Docker to build the image from the current directory (where your pom.xml is)
+    ports:
+      - "8080:8080" # Maps the container's 8080 to the Codespace's 8080
+    environment:
+      # These environment variables will be picked up by Spring Boot
+      # Note: application.properties is still preferred for full config,
+      # but these ensure consistency if needed.
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marriage_bureau_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: springuser
+      SPRING_DATASOURCE_PASSWORD: Mahispring@33311333
+    depends_on:
+      mysql:
+        condition: service_healthy # Ensures MySQL is healthy before starting the app
+    # If you need to map your local target folder for live changes (less common with JAR in container)
+    # volumes:
+    #   - ./target:/app/target # Map the target directory to access the JAR inside the container
+    # command: java -jar /app/target/marriage-bureau-software-0.0.1-SNAPSHOT.jar # Explicitly run the JAR if you use volumes
+
 volumes:
-  mysql_data: # Define the named volume for data persistence
+  mysql_data:
