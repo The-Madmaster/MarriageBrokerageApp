@@ -14,8 +14,8 @@ public class MarriageBureauSoftwareApplication {
     }
 
     // Add this bean for password encoding
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+   // @Bean
+    //public PasswordEncoder passwordEncoder() {
+    //    return new BCryptPasswordEncoder();
+    //}
 }

@@ -19,12 +19,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data // Generates getters, setters, equals, hashCode, toString
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user") // Or 'users' depending on your preference/existing table
-public class User {
+@Table(name = "app_users") // Or 'users' depending on your preference/existing table
+public class AppUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

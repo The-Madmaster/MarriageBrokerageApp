@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Data // Lombok annotation to generate getters, setters, toString, equals, and hashCode
 @NoArgsConstructor // Lombok annotation to generate a no-argument constructor
 @AllArgsConstructor // Lombok annotation to generate a constructor with all arguments
-public class Profile {
+public class AppProfile { // Correct class name (assuming you renamed Profile to AppProfile)
 
     @Id // Marks this field as the primary key
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increments the ID
@@ -24,7 +24,7 @@ public class Profile {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING) // Stores enum names as strings
-    private Gender gender;
+    private Gender gender; // Assuming Gender enum exists
 
     @Column(nullable = false)
     private LocalDate dateOfBirth;
@@ -49,13 +49,13 @@ public class Profile {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private MaritalStatus maritalStatus;
+    private MaritalStatus maritalStatus; // Assuming MaritalStatus enum exists
 
     @Column
     private Double heightCm; // Height in centimeters
 
     @Column(length = 50)
-    private String complexion; // <--- ADDED 'private' KEYWORD
+    private String complexion;
 
     @Column(length = 50)
     private String bodyType;
@@ -110,9 +110,10 @@ public class Profile {
     private Double preferredPartnerMaxHeightCm;
 
     // Relationship: Many Profiles can be managed by one User (Broker/Admin)
-    @ManyToOne(fetch = FetchType.LAZY) // Lazy fetching for performance
+    @ManyToOne(fetch = FetchType.LAZY)
+    // Lazy fetching for performance
     @JoinColumn(name = "created_by_user_id", nullable = false) // Foreign key column
-    private User createdByUser; // <--- RENAMED FROM 'createdBy' TO 'createdByUser'
+    private AppUser createdByUser; // Correctly references AppUser
 
     // Lifecycle callbacks for auditing createdDate and lastUpdatedDate
     @PrePersist
