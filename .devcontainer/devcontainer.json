@@ -1,0 +1,25 @@
+{
+  "name": "Java Spring Boot Application",
+  "image": "mcr.microsoft.com/devcontainers/java:21",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": { // <-- THIS IS CRITICAL for Docker
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "Pivotal.vscode-boot-devtools",
+        "vmware.vscode-boot-language-support",
+        "redhat.vscode-xml"
+      ]
+    }
+  },
+  "forwardPorts": [8080],
+  "postCreateCommand": "npm install -g npm@latest && ./mvnw clean install -DskipTests",
+  "remoteUser": "vscode"
+}

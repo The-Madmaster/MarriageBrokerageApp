@@ -1,4 +1,3 @@
-// src/main/java/com/marriagebureau/entity/Profile.java
 package com.marriagebureau.entity;
 
 import jakarta.persistence.*;
@@ -56,7 +55,7 @@ public class Profile {
     private Double heightCm; // Height in centimeters
 
     @Column(length = 50)
-    private String complexion;
+    private String complexion; // <--- ADDED 'private' KEYWORD
 
     @Column(length = 50)
     private String bodyType;
@@ -110,12 +109,10 @@ public class Profile {
     @Column
     private Double preferredPartnerMaxHeightCm;
 
-
     // Relationship: Many Profiles can be managed by one User (Broker/Admin)
     @ManyToOne(fetch = FetchType.LAZY) // Lazy fetching for performance
     @JoinColumn(name = "created_by_user_id", nullable = false) // Foreign key column
-    private User createdBy;
-
+    private User createdByUser; // <--- RENAMED FROM 'createdBy' TO 'createdByUser'
 
     // Lifecycle callbacks for auditing createdDate and lastUpdatedDate
     @PrePersist

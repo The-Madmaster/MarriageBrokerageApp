@@ -1,11 +1,14 @@
+com/marriagebureau/controller/ProfileController.class
+com/marriagebureau/entity/User.class
+com/marriagebureau/usermanagement/repository/UserRepository.class
+com/marriagebureau/entity/Profile.class
 com/marriagebureau/entity/UserRole.class
 com/marriagebureau/entity/MaritalStatus.class
 com/marriagebureau/usermanagement/service/UserService.class
 com/marriagebureau/usermanagement/controller/HomeController.class
 com/marriagebureau/MarriageBureauSoftwareApplication.class
-com/marriagebureau/entity/User.class
-com/marriagebureau/usermanagement/repository/UserRepository.class
-com/marriagebureau/entity/Profile.class
 com/marriagebureau/usermanagement/controller/UserController.class
 com/marriagebureau/config/SecurityConfig.class
+com/marriagebureau/repository/ProfileRepository.class
+com/marriagebureau/service/ProfileService.class
 com/marriagebureau/entity/Gender.class

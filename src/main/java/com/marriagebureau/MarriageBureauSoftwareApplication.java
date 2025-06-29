@@ -1,21 +1,21 @@
-// MarriageBureauSoftwareApplication.java
-package com.marriagebureau; // Make sure this matches your base package
+package com.marriagebureau;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.context.annotation.Bean; // <--- ADD THIS IMPORT
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // <--- ADD THIS IMPORT
+import org.springframework.security.crypto.password.PasswordEncoder; // <--- ADD THIS IMPORT
 
-@SpringBootApplication // This is the main annotation that kicks off Spring Boot
+@SpringBootApplication
 public class MarriageBureauSoftwareApplication {
 
     public static void main(String[] args) {
-        // This is the main method that starts your Spring Boot application
         SpringApplication.run(MarriageBureauSoftwareApplication.class, args);
     }
+
+    // Add this bean for password encoding
     @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
