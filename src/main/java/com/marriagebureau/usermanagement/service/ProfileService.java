@@ -1,15 +1,14 @@
-package com.marriagebureau.usermanagement.service; // Corrected package name
+package com.marriagebureau.usermanagement.service;
 
-import com.marriagebureau.entity.AppProfile; // Changed from Profile to AppProfile
-import com.marriagebureau.entity.AppUser;    // Changed from User to AppUser
-import com.marriagebureau.usermanagement.repository.ProfileRepository; // Corrected package and name
-import com.marriagebureau.usermanagement.repository.AppUserRepository; // Changed from UserRepository to AppUserRepository
-import jakarta.persistence.EntityNotFoundException;
+import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.entity.Profile;
+import com.marriagebureau.security.payload.ProfileSearchDto; // CORRECTED IMPORT
+import com.marriagebureau.usermanagement.repository.AppUserRepository;
+import com.marriagebureau.usermanagement.repository.ProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,96 +16,108 @@ import java.util.Optional;
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final AppUserRepository appUserRepository; // Changed from UserRepository to AppUserRepository
+    private final AppUserRepository appUserRepository;
 
     @Autowired
-    public ProfileService(ProfileRepository profileRepository, AppUserRepository appUserRepository) { // Changed parameter type
+    public ProfileService(ProfileRepository profileRepository, AppUserRepository appUserRepository) {
         this.profileRepository = profileRepository;
-        this.appUserRepository = appUserRepository; // Corrected variable name
+        this.appUserRepository = appUserRepository;
     }
 
     @Transactional
-    public AppProfile createProfile(AppProfile profile, Long userId) { // Changed return type and parameter type
-        // Ensure the AppUser exists before creating a profile linked to them
-        AppUser appUser = appUserRepository.findById(userId) // Changed User to AppUser and userRepository to appUserRepository
-                                         .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
+    public Optional<Profile> createProfile(Profile profile, Long userId) {
+        Optional<AppUser> existingUser = appUserRepository.findById(userId);
+        if (existingUser.isEmpty()) {
+            return Optional.empty();
+        }
 
-        profile.setCreatedByUser(appUser); // Link the profile to the appUser
-        profile.setCreatedDate(LocalDateTime.now());
-        profile.setLastUpdatedDate(LocalDateTime.now());
-        profile.setActive(true); // Default to active
+        AppUser appUser = existingUser.get();
 
-        // You might add more business logic here, e.g., validation
-        return profileRepository.save(profile);
+        if (profileRepository.findByAppUser_Id(userId).isPresent()) { // Corrected findByAppUserId to findByAppUser_Id
+            return Optional.empty();
+        }
+
+        profile.setAppUser(appUser);
+        Profile savedProfile = profileRepository.save(profile);
+        return Optional.of(savedProfile);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<AppProfile> getProfileById(Long id) { // Changed return type
+    public Optional<Profile> getProfileById(Long id) {
         return profileRepository.findById(id);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<AppProfile> getProfileByUserId(Long userId) { // Changed return type
-        return profileRepository.findByCreatedByUser_Id(userId);
+    public Optional<Profile> getProfileByAppUserId(Long appUserId) {
+        return profileRepository.findByAppUser_Id(appUserId); // Corrected findByAppUserId to findByAppUser_Id
     }
 
-    @Transactional(readOnly = true)
-    public Optional<AppProfile> getProfileByEmail(String email) { // Changed return type
-        return profileRepository.findByEmail(email);
-    }
-
-    @Transactional(readOnly = true)
-    public List<AppProfile> getAllProfiles() { // Changed return type
+    public List<Profile> getAllProfiles() {
         return profileRepository.findAll();
     }
 
     @Transactional
-    public AppProfile updateProfile(Long id, AppProfile updatedProfileDetails) { // Changed return type and parameter type
-        AppProfile existingProfile = profileRepository.findById(id) // Changed type
-                .orElseThrow(() -> new EntityNotFoundException("Profile not found with ID: " + id));
+    public Optional<Profile> updateProfile(Long id, Profile updatedProfile) {
+        return profileRepository.findById(id).map(existingProfile -> {
+            existingProfile.setFullName(updatedProfile.getFullName());
+            existingProfile.setDateOfBirth(updatedProfile.getDateOfBirth());
+            existingProfile.setGender(updatedProfile.getGender());
+            existingProfile.setReligion(updatedProfile.getReligion());
+            existingProfile.setCaste(updatedProfile.getCaste());
+            existingProfile.setSubCaste(updatedProfile.getSubCaste());
+            existingProfile.setMaritalStatus(updatedProfile.getMaritalStatus());
+            existingProfile.setHeightCm(updatedProfile.getHeightCm());
+            existingProfile.setComplexion(updatedProfile.getComplexion());
+            existingProfile.setBodyType(updatedProfile.getBodyType());
+            existingProfile.setEducation(updatedProfile.getEducation());
+            existingProfile.setOccupation(updatedProfile.getOccupation());
+            existingProfile.setAnnualIncome(updatedProfile.getAnnualIncome());
+            existingProfile.setCity(updatedProfile.getCity());
+            existingProfile.setState(updatedProfile.getState());
+            existingProfile.setCountry(updatedProfile.getCountry());
+            existingProfile.setAboutMe(updatedProfile.getAboutMe());
+            existingProfile.setPhotoUrl(updatedProfile.getPhotoUrl());
+            existingProfile.setActive(updatedProfile.isActive());
 
-        // Update fields individually to avoid overwriting with nulls unless intended
-        existingProfile.setFullName(updatedProfileDetails.getFullName());
-        existingProfile.setGender(updatedProfileDetails.getGender());
-        existingProfile.setDateOfBirth(updatedProfileDetails.getDateOfBirth());
-        existingProfile.setReligion(updatedProfileDetails.getReligion());
-        existingProfile.setMaritalStatus(updatedProfileDetails.getMaritalStatus());
-        existingProfile.setAboutMe(updatedProfileDetails.getAboutMe());
-        existingProfile.setPhotoUrl(updatedProfileDetails.getPhotoUrl());
-        existingProfile.setContactNumber(updatedProfileDetails.getContactNumber());
-        existingProfile.setEmail(updatedProfileDetails.getEmail());
-        existingProfile.setEducation(updatedProfileDetails.getEducation());
-        existingProfile.setOccupation(updatedProfileDetails.getOccupation());
-        existingProfile.setAnnualIncome(updatedProfileDetails.getAnnualIncome());
-        existingProfile.setCity(updatedProfileDetails.getCity());
-        existingProfile.setState(updatedProfileDetails.getState());
-        existingProfile.setCountry(updatedProfileDetails.getCountry());
-        existingProfile.setCaste(updatedProfileDetails.getCaste());
-        existingProfile.setSubCaste(updatedProfileDetails.getSubCaste());
-        existingProfile.setHeightCm(updatedProfileDetails.getHeightCm());
-        existingProfile.setBodyType(updatedProfileDetails.getBodyType());
-        existingProfile.setComplexion(updatedProfileDetails.getComplexion());
-        existingProfile.setPreferredPartnerMinAge(updatedProfileDetails.getPreferredPartnerMinAge());
-        existingProfile.setPreferredPartnerMaxAge(updatedProfileDetails.getPreferredPartnerMaxAge());
-        existingProfile.setPreferredPartnerMinHeightCm(updatedProfileDetails.getPreferredPartnerMinHeightCm());
-        existingProfile.setPreferredPartnerMaxHeightCm(updatedProfileDetails.getPreferredPartnerMaxHeightCm());
-        existingProfile.setPreferredPartnerReligion(updatedProfileDetails.getPreferredPartnerReligion());
-        existingProfile.setPreferredPartnerCaste(updatedProfileDetails.getPreferredPartnerCaste());
+            existingProfile.setPreferredPartnerMinAge(updatedProfile.getPreferredPartnerMinAge());
+            existingProfile.setPreferredPartnerMaxAge(updatedProfile.getPreferredPartnerMaxAge());
+            existingProfile.setPreferredPartnerReligion(updatedProfile.getPreferredPartnerReligion());
+            existingProfile.setPreferredPartnerCaste(updatedProfile.getPreferredPartnerCaste());
+            existingProfile.setPreferredPartnerMinHeightCm(updatedProfile.getPreferredPartnerMinHeightCm());
+            existingProfile.setPreferredPartnerMaxHeightCm(updatedProfile.getPreferredPartnerMaxHeightCm());
 
-        existingProfile.setLastUpdatedDate(LocalDateTime.now());
-        existingProfile.setActive(updatedProfileDetails.isActive()); // Allow updating active status
-
-        return profileRepository.save(existingProfile);
+            return profileRepository.save(existingProfile);
+        }).or(Optional::empty);
     }
 
     @Transactional
-    public void deleteProfile(Long id) {
-        if (!profileRepository.existsById(id)) {
-            throw new EntityNotFoundException("Profile not found with ID: " + id);
+    public boolean deleteProfile(Long id) {
+        if (profileRepository.existsById(id)) {
+            profileRepository.deleteById(id);
+            return true;
         }
-        profileRepository.deleteById(id);
+        return false;
     }
 
-    // You can add more business logic methods here as needed,
-    // e.g., search, filter, match-making logic.
+    /**
+     * Searches for profiles based on provided criteria.
+     *
+     * @param searchDto The DTO containing search parameters.
+     * @return A list of profiles matching the criteria.
+     */
+    public List<Profile> searchProfiles(ProfileSearchDto searchDto) {
+        return profileRepository.findBySearchCriteria( // Changed method name
+                searchDto.getGender(),
+                searchDto.getMinAge(),
+                searchDto.getMaxAge(),
+                searchDto.getReligion(),
+                searchDto.getCaste(),
+                searchDto.getMaritalStatus(),
+                searchDto.getMinHeightCm(),
+                searchDto.getMaxHeightCm(),
+                searchDto.getCity(),
+                searchDto.getState(),
+                searchDto.getCountry(),
+                searchDto.getEducation(),
+                searchDto.getOccupation()
+        );
+    }
 }

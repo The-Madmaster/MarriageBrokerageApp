@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marriage Bureau Login</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+        }
+        /* Ensure the main container is centered and has rounded corners */
+        .login-container {
+            background-color: #ffffff; /* White background for the form */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            border-radius: 12px; /* Rounded corners */
+            padding: 2.5rem; /* Increased padding */
+            width: 100%;
+            max-width: 400px; /* Max width for larger screens */
+            text-align: center;
+        }
+        /* Style for input fields */
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 8px; /* Rounded corners for inputs */
+            box-sizing: border-box; /* Include padding in width */
+        }
+        /* Style for the submit button */
+        .submit-button {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s ease; /* Smooth transition on hover */
+            cursor: pointer;
+        }
+        .submit-button:hover {
+            background-color: #4338ca; /* Indigo 700 on hover */
+        }
+        /* Message box styling */
+        .message-box {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+        .message-box.success {
+            background-color: #d1fae5; /* Green 100 */
+            color: #065f46; /* Green 800 */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Red 100 */
+            color: #991b1b; /* Red 800 */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Marriage Bureau Login</h2>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <input type="email" id="email" name="email" placeholder="Email address" required class="input-field">
+            </div>
+            <div>
+                <input type="password" id="password" name="password" placeholder="Password" required class="input-field">
+            </div>
+            <button type="submit" class="submit-button">Sign in</button>
+        </form>
+        <div id="message" class="message-box hidden"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            const messageBox = document.getElementById('message');
+
+            // Function to display messages (success or error)
+            function showMessage(message, type) {
+                messageBox.textContent = message;
+                messageBox.className = `message-box ${type}`; // Apply success or error class
+                messageBox.classList.remove('hidden'); // Make it visible
+            }
+
+            loginForm.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Prevent default form submission
+
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    // Send login request to your Spring Boot backend
+                    const response = await fetch('/api/v1/auth/authenticate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json(); // Parse the JSON response
+
+                    if (response.ok) { // Check if the HTTP status code is 2xx (success)
+                        showMessage('Login successful! Token: ' + data.token, 'success');
+                        // In a real application, you would store the token (e.g., in localStorage)
+                        // and redirect the user to a protected page.
+                        console.log('Authentication Token:', data.token);
+                        // Example: Redirect to a dashboard page after successful login
+                        // window.location.href = '/dashboard';
+                    } else {
+                        // Handle errors (e.g., invalid credentials)
+                        showMessage(data.message || 'Login failed. Please check your credentials.', 'error');
+                        console.error('Login Error:', data.message);
+                    }
+                } catch (error) {
+                    // Handle network errors or other unexpected issues
+                    showMessage('An error occurred. Please try again later.', 'error');
+                    console.error('Fetch Error:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

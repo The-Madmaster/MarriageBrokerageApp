@@ -4,10 +4,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -19,51 +19,42 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService; // This will be CustomUserDetailsService
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
+    @Autowired
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, CustomUserDetailsService customUserDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.userDetailsService = userDetailsService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String token = getJwtFromRequest(request);
 
-        // 1. Get JWT token from HTTP request
-        String token = getTokenFromRequest(request);
-
-        // 2. Validate token
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            // 3. Get username from token
+        if(StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)){
+            // FIX: Ensure this line calls getUsername()
             String username = jwtTokenProvider.getUsername(token);
 
-            // 4. Load user associated with token
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
-            // 5. Create Authentication object
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
-                    null, // No credentials (password) needed after token validation
+                    null,
                     userDetails.getAuthorities()
             );
-
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            // 6. Set Spring Security authentication
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
-
-        // Continue with the filter chain (e.g., to the next filter or the dispatcher servlet)
         filterChain.doFilter(request, response);
     }
 
-    private String getTokenFromRequest(HttpServletRequest request) {
+    private String getJwtFromRequest(HttpServletRequest request){
         String bearerToken = request.getHeader("Authorization");
-        // Check if Authorization header is present and starts with "Bearer "
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Extract the token string (after "Bearer ")
+        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){
+            return bearerToken.substring(7);
         }
         return null;
     }

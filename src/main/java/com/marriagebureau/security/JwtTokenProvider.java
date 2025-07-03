@@ -1,15 +1,16 @@
 package com.marriagebureau.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.function.Function;
 
 @Component
 public class JwtTokenProvider {
@@ -17,70 +18,52 @@ public class JwtTokenProvider {
     @Value("${app.jwt-secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt-expiration-milliseconds}")
-    private long jwtExpirationDate; // Use long for milliseconds
+    @Value("${app-jwt-expiration-milliseconds}")
+    private long jwtExpirationDate;
 
-    // Get JWT Secret Key
-    private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
-    }
-
-    // Generate JWT token
+    // generate JWT token
     public String generateToken(Authentication authentication) {
-        String username = authentication.getName(); // Get username from authenticated user
+        String username = authentication.getName();
 
         Date currentDate = new Date();
+
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 
         String token = Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(expireDate)
-                .signWith(key(), SignatureAlgorithm.HS512) // Use HS512 algorithm
+                .subject(username)
+                .issuedAt(new Date())
+                .expiration(expireDate)
+                .signWith(key())
                 .compact();
-
         return token;
     }
 
-    // Get username from JWT token
-    public String getUsername(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key())
+    private SecretKey key(){
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    }
+
+    // get username from Jwt token
+    public String getUsername(String token){
+        Claims claims = Jwts.parser()
+                .verifyWith(key())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
         return claims.getSubject();
     }
 
-    // Validate JWT token
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key())
+    // validate Jwt token
+    public boolean validateToken(String token){
+        try{
+            Jwts.parser()
+                    .verifyWith(key())
                     .build()
-                    .parse(token); // Use .parse() for general parsing and validation
+                    .parse(token);
             return true;
-        } catch (SignatureException ex) {
-            // Invalid JWT signature
-            // Log this exception: logger.error("Invalid JWT signature");
-            System.out.println("Invalid JWT signature"); // For development
-        } catch (MalformedJwtException ex) {
-            // Invalid JWT token
-            // Log this exception: logger.error("Invalid JWT token");
-            System.out.println("Invalid JWT token"); // For development
-        } catch (ExpiredJwtException ex) {
-            // Expired JWT token
-            // Log this exception: logger.error("Expired JWT token");
-            System.out.println("Expired JWT token"); // For development
-        } catch (UnsupportedJwtException ex) {
-            // Unsupported JWT token
-            // Log this exception: logger.error("Unsupported JWT token");
-            System.out.println("Unsupported JWT token"); // For development
-        } catch (IllegalArgumentException ex) {
-            // JWT claims string is empty
-            // Log this exception: logger.error("JWT claims string is empty");
-            System.out.println("JWT claims string is empty"); // For development
+        }catch (Exception e){
+            // You can add more specific exception handling here if needed
+            // e.g., MalformedJwtException, ExpiredJwtException, UnsupportedJwtException, IllegalArgumentException
+            throw new RuntimeException("JWT token is invalid or expired: " + e.getMessage());
         }
-        return false;
     }
 }

@@ -3,6 +3,8 @@ package com.marriagebureau.usermanagement.controller;
 import com.marriagebureau.security.JwtTokenProvider;
 import com.marriagebureau.security.payload.JwtAuthResponse;
 import com.marriagebureau.security.payload.LoginDto;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,31 +22,26 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
     public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    /**
-     * Handles user login and generates a JWT.
-     * POST /api/auth/login
-     * @param loginDto The DTO containing username and password.
-     * @return ResponseEntity with JwtAuthResponse containing the JWT token.
-     */
     @PostMapping("/login")
     public ResponseEntity<JwtAuthResponse> authenticateUser(@RequestBody LoginDto loginDto) {
-        // Authenticate the user using Spring Security's AuthenticationManager
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        loginDto.getUsername(), // Lombok's getUsername() from LoginDto
+                        loginDto.getPassword()  // Lombok's getPassword() from LoginDto
+                )
         );
 
-        // Set the authenticated user in Spring Security context
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Generate JWT token for the authenticated user
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // Return the token in a response DTO
-        return ResponseEntity.ok(new JwtAuthResponse(token));
+        // Corrected: Uses the @AllArgsConstructor in JwtAuthResponse
+        return new ResponseEntity<>(new JwtAuthResponse(token, "Bearer"), HttpStatus.OK);
     }
 }

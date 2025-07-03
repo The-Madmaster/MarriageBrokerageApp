@@ -1,7 +1,7 @@
 package com.marriagebureau.usermanagement.controller;
 
-import com.marriagebureau.entity.AppUser;
-import com.marriagebureau.usermanagement.service.AppUserService; // Correct import
+import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.service.AppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,89 +14,60 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/users")
 public class AppUserController {
 
-    private final AppUserService appUserService; // Corrected variable name to match the convention (lowercase first letter)
+    private final AppUserService appUserService;
 
     @Autowired
-    public AppUserController(AppUserService appUserService) { // Parameter name is also corrected
+    public AppUserController(AppUserService appUserService) {
         this.appUserService = appUserService;
     }
 
-    /**
-     * Registers a new user.
-     * POST /api/users
-     * @param user The user object to register.
-     * @return ResponseEntity with the created user (password nullified) and HTTP status.
-     */
     @PostMapping
     public ResponseEntity<AppUser> registerUser(@RequestBody AppUser user) {
-        if (appUserService.findByUsername(user.getUsername()).isPresent()) { // Changed userService to appUserService
-            return new ResponseEntity<>(HttpStatus.CONFLICT); // User already exists
+        // Lombok's getters are used here (e.g., user.getUsername())
+        if (appUserService.findByUsername(user.getUsername()).isPresent() ||
+            appUserService.findByEmail(user.getEmail()).isPresent() ||
+            appUserService.findByContactNumber(user.getContactNumber()).isPresent()) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
-        AppUser newUser = appUserService.createUser(user); // Changed userService to appUserService
-        // Important: Nullify password before returning to client for security
-        newUser.setPassword(null);
+        AppUser newUser = appUserService.createUser(user);
+        newUser.setPassword(null); // Nullify password before returning to client for security (Lombok's setPassword)
         return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
 
-    /**
-     * Retrieves a user by their ID.
-     * GET /api/users/{id}
-     * @param id The ID of the user to retrieve.
-     * @return ResponseEntity with the user (password nullified) and HTTP status.
-     */
     @GetMapping("/{id}")
     public ResponseEntity<AppUser> getUserById(@PathVariable Long id) {
-        return appUserService.findById(id) // Changed userService to appUserService
+        return appUserService.findById(id)
                 .map(user -> {
-                    user.setPassword(null); // Nullify password
+                    user.setPassword(null); // Lombok's setPassword
                     return new ResponseEntity<>(user, HttpStatus.OK);
                 })
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Retrieves all registered users.
-     * GET /api/users
-     * @return ResponseEntity with a list of all users (passwords nullified) and HTTP status.
-     */
-    @GetMapping // This is important
+    @GetMapping
     public ResponseEntity<List<AppUser>> getAllUsers() {
-        List<AppUser> users = appUserService.findAllUsers(); // Changed userService to appUserService
-        // Nullify passwords for all users before returning
+        List<AppUser> users = appUserService.findAllUsers();
         List<AppUser> usersWithoutPasswords = users.stream()
-                .peek(user -> user.setPassword(null))
+                .peek(user -> user.setPassword(null)) // Lombok's setPassword
                 .collect(Collectors.toList());
         return new ResponseEntity<>(usersWithoutPasswords, HttpStatus.OK);
     }
 
-    /**
-     * Updates an existing user's information.
-     * PUT /api/users/{id}
-     * @param id The ID of the user to update.
-     * @param userDetails The user object with updated information.
-     * @return ResponseEntity with the updated user (password nullified) and HTTP status.
-     */
     @PutMapping("/{id}")
     public ResponseEntity<AppUser> updateUser(@PathVariable Long id, @RequestBody AppUser userDetails) {
-        return appUserService.updateUser(id, userDetails) // Changed userService to appUserService
+        return appUserService.updateUser(id, userDetails)
                 .map(updatedUser -> {
-                    updatedUser.setPassword(null); // Nullify password
+                    updatedUser.setPassword(null); // Lombok's setPassword
                     return new ResponseEntity<>(updatedUser, HttpStatus.OK);
                 })
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Deletes a user by their ID.
-     * DELETE /api/users/{id}
-     * @param id The ID of the user to delete.
-     * @return ResponseEntity with HTTP status indicating success or failure.
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        if (appUserService.deleteUser(id)) { // Changed userService to appUserService
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content for successful deletion
+        if (appUserService.deleteUser(id)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND); // User not found
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }
