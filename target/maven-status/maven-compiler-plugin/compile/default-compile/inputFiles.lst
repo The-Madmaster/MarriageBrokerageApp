@@ -5,6 +5,8 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/AuthController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/Gender.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/payload/LoginDto.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/AuthService.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/RegisterRequest.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/ProfileController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/payload/ProfileSearchDto.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/entity/Profile.java
@@ -14,6 +16,7 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/entity/AppUser.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/config/ApplicationConfig.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/SecurityService.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/LoginRequest.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/JwtTokenProvider.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/ProfileService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/AppUserController.java

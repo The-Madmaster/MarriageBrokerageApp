@@ -11,8 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder; // Make sure this import is present
 
 @Configuration
 public class ApplicationConfig {
@@ -20,27 +19,32 @@ public class ApplicationConfig {
     @Autowired
     private AppUserRepository appUserRepository;
 
+    // 1. Inject PasswordEncoder
+    private final PasswordEncoder passwordEncoder; // Declare field
+
+    @Autowired // Add constructor to inject PasswordEncoder and AppUserRepository
+    public ApplicationConfig(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
+        this.appUserRepository = appUserRepository;
+        this.passwordEncoder = passwordEncoder; // Initialize the injected passwordEncoder
+    }
+
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> appUserRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    // You correctly removed the @Bean public PasswordEncoder method from here.
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder());
+        // 2. Use the injected passwordEncoder field
+        authProvider.setPasswordEncoder(passwordEncoder); // Changed from passwordEncoder() to passwordEncoder
         return authProvider;
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+    // You correctly removed the @Bean public AuthenticationManager method from here.
+    // The AuthenticationManager is now solely defined in SecurityConfig.
 }

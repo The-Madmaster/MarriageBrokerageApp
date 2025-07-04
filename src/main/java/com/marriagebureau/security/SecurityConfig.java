@@ -1,83 +1,64 @@
 // src/main/java/com/marriagebureau/security/SecurityConfig.java
 package com.marriagebureau.security;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
-
-/**
- * Spring Security configuration class.
- * Configures security filters, authentication providers, and authorization rules.
- */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Enables method-level security annotations like @PreAuthorize
-@RequiredArgsConstructor
+@EnableMethodSecurity // Enable method-level security (e.g., @PreAuthorize)
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final AuthenticationProvider authenticationProvider;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; // Inject the filter
 
-    /**
-     * Configures the security filter chain.
-     * Defines which requests require authentication and which are permitted.
-     * Sets up JWT authentication and session management.
-     *
-     * @param http The HttpSecurity object to configure.
-     * @return The configured SecurityFilterChain.
-     * @throws Exception if an error occurs during configuration.
-     */
+    public SecurityConfig(CustomUserDetailsService customUserDetailsService,
+                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                          JwtAuthenticationFilter jwtAuthenticationFilter) { // Add to constructor
+        this.customUserDetailsService = customUserDetailsService;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless API (JWT)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
+            .csrf(csrf -> csrf.disable()) // Disable CSRF for REST APIs using JWT
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Use stateless sessions for JWT
             .authorizeHttpRequests(authorize -> authorize
-                // Allow access to static resources and H2 console
-                .requestMatchers("/", "/index.html", "/static/**", "/h2-console/**").permitAll()
-                // Allow public access to authentication and registration endpoints
-                // CORRECTED: Permit the actual login endpoint
-                .requestMatchers("/api/auth/login", "/api/users").permitAll() // "/api/users" for registration if applicable
-                // All other requests require authentication
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Use stateless sessions for JWT
-            )
-            .authenticationProvider(authenticationProvider) // Set custom authentication provider
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter before username/password filter
+                .requestMatchers("/api/auth/**").permitAll() // Allow public access to auth endpoints
+                .requestMatchers("/h2-console/**").permitAll() // Allow H2 console access (for dev only)
+                .anyRequest().authenticated() // All other requests require authentication
+            );
+
+        // Add JWT authentication filter before UsernamePasswordAuthenticationFilter
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // For H2 console to work with Spring Security
+        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
-    }
-
-    /**
-     * Configures CORS (Cross-Origin Resource Sharing) for the application.
-     * Allows requests from any origin, with specific methods and headers.
-     *
-     * @return CorsConfigurationSource for CORS settings.
-     */
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // Allow all origins for development
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP methods
-        configuration.setAllowedHeaders(List.of("*")); // Allow all headers
-        configuration.setAllowCredentials(true); // Allow credentials (e.g., cookies, authorization headers)
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Apply CORS to all paths
-        return source;
     }
 }

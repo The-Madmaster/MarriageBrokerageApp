@@ -28,7 +28,7 @@ public class AppUser implements UserDetails { // Implement UserDetails
 
     @Column(nullable = false)
     private String password; // This will store the encoded password
-
+     private boolean enabled;
     // For simplicity, let's assume a single role for now, or you can expand this
     private String role = "ROLE_USER"; // Default role
 
