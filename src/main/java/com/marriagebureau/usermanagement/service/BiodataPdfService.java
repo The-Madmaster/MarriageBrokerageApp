@@ -2,174 +2,106 @@ package com.marriagebureau.usermanagement.service;
 
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfWriter;
+import java.awt.Color; // <--- CHANGE THIS IMPORT
 import com.marriagebureau.usermanagement.entity.Profile;
 import org.springframework.stereotype.Service;
-import java.awt.Color; 
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.time.Period;
 import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 
-/**
- * Service class for generating PDF biodata from a user profile.
- * This service uses OpenPDF library to create PDF documents.
- */
 @Service
 public class BiodataPdfService {
 
-    /**
-     * Generates a PDF biodata for a given profile, with contact details hidden.
-     *
-     * @param profile The Profile object for which to generate the biodata.
-     * @return A ByteArrayOutputStream containing the generated PDF.
-     * @throws DocumentException If there's an error creating the PDF document.
-     * @throws IOException If there's an I/O error.
-     */
-    public ByteArrayOutputStream generateBiodataPdf(Profile profile) throws DocumentException, IOException {
-        // Create a new Document object with A4 size and margins
-        Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+    public byte[] generateBiodataPdf(Profile profile) throws DocumentException, IOException {
+        Document document = new Document(PageSize.A4);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        // Create a PdfWriter instance to write the document to the ByteArrayOutputStream
         PdfWriter.getInstance(document, baos);
 
-        // Open the document for writing
         document.open();
 
-        // Define fonts
-        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 24, new Color(0, 51, 102)); // Dark blue
-        Font sectionTitleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, new Color(0, 102, 153)); // Medium blue
-        Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
-        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
-        Font detailFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Font.BOLD);
+        // Use Color from java.awt.Color
+        Font titleFont = new Font(Font.HELVETICA, 18, Font.BOLD, Color.DARK_GRAY);
+        Font sectionFont = new Font(Font.HELVETICA, 14, Font.BOLD, Color.BLACK);
+        Font contentFont = new Font(Font.HELVETICA, 12, Font.NORMAL, Color.BLACK);
+        Font labelFont = new Font(Font.HELVETICA, 12, Font.BOLD, Color.BLACK);
 
-        // Add Title
-        Paragraph title = new Paragraph("Matrimonial Biodata", titleFont);
+        // Title
+        Paragraph title = new Paragraph("Biodata for " + profile.getFullName(), titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
         title.setSpacingAfter(20);
         document.add(title);
 
-        // Add Profile Photo (Placeholder if photoUrl is not available or not handled)
-        // In a real application, you would fetch the image from photoUrl and add it.
-        // For now, we'll just add a placeholder text or skip if no actual image handling is desired.
-        if (profile.getPhotoUrl() != null && !profile.getPhotoUrl().isEmpty()) {
-            // Placeholder: In a real app, load image from URL
-            Paragraph photoPlaceholder = new Paragraph("Photo Placeholder: " + profile.getPhotoUrl(), normalFont);
-            photoPlaceholder.setAlignment(Element.ALIGN_CENTER);
-            photoPlaceholder.setSpacingAfter(10);
-            document.add(photoPlaceholder);
-        } else {
-            Paragraph noPhoto = new Paragraph("No photo available", normalFont);
-            noPhoto.setAlignment(Element.ALIGN_CENTER);
-            noPhoto.setSpacingAfter(10);
-            document.add(noPhoto);
+        // Personal Details Section
+        document.add(new Paragraph("Personal Details", sectionFont));
+        document.add(Chunk.NEWLINE);
+
+        addKeyValue(document, "Full Name:", profile.getFullName(), labelFont, contentFont);
+        addKeyValue(document, "Date of Birth:", profile.getDateOfBirth() != null ? profile.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")) : "N/A", labelFont, contentFont);
+        if (profile.getDateOfBirth() != null) {
+            int age = Period.between(profile.getDateOfBirth(), LocalDate.now()).getYears();
+            addKeyValue(document, "Age:", String.valueOf(age) + " years", labelFont, contentFont);
         }
+        addKeyValue(document, "Gender:", profile.getGender(), labelFont, contentFont);
+        addKeyValue(document, "Marital Status:", profile.getMaritalStatus(), labelFont, contentFont);
+        addKeyValue(document, "Height:", profile.getHeightCm() != null ? profile.getHeightCm() + " cm" : "N/A", labelFont, contentFont);
+        addKeyValue(document, "Complexion:", profile.getComplexion(), labelFont, contentFont);
+        addKeyValue(document, "Body Type:", profile.getBodyType(), labelFont, contentFont);
 
-
-        // --- Personal Details Section ---
-        document.add(new Paragraph("Personal Details", sectionTitleFont));
-        document.add(Chunk.NEWLINE); // Add a line break for spacing
-
-        addDetailRow(document, "Full Name:", profile.getFullName(), headerFont, normalFont);
-        addDetailRow(document, "Date of Birth:", profile.getDateOfBirth() != null ? profile.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) : "N/A", headerFont, normalFont);
-        addDetailRow(document, "Age:", profile.getDateOfBirth() != null ? String.valueOf(Period.between(profile.getDateOfBirth(), LocalDate.now()).getYears()) : "N/A", headerFont, normalFont);
-        addDetailRow(document, "Gender:", profile.getGender(), headerFont, normalFont);
-        addDetailRow(document, "Marital Status:", profile.getMaritalStatus(), headerFont, normalFont);
-        addDetailRow(document, "Religion:", profile.getReligion(), headerFont, normalFont);
-        addDetailRow(document, "Caste:", profile.getCaste(), headerFont, normalFont);
-        addDetailRow(document, "Sub-Caste:", profile.getSubCaste(), headerFont, normalFont);
         document.add(Chunk.NEWLINE);
 
-        // --- Physical Attributes Section ---
-        document.add(new Paragraph("Physical Attributes", sectionTitleFont));
+        // Religious & Background Details
+        document.add(new Paragraph("Religious & Background", sectionFont));
         document.add(Chunk.NEWLINE);
 
-        addDetailRow(document, "Height:", profile.getHeightCm() != null ? profile.getHeightCm() + " cm" : "N/A", headerFont, normalFont);
-        addDetailRow(document, "Complexion:", profile.getComplexion(), headerFont, normalFont);
-        addDetailRow(document, "Body Type:", profile.getBodyType(), headerFont, normalFont);
+        addKeyValue(document, "Religion:", profile.getReligion(), labelFont, contentFont);
+        addKeyValue(document, "Caste:", profile.getCaste(), labelFont, contentFont);
+        addKeyValue(document, "Sub-Caste:", profile.getSubCaste(), labelFont, contentFont);
+        addKeyValue(document, "Mother Tongue:", "N/A", labelFont, contentFont);
+
         document.add(Chunk.NEWLINE);
 
-        // --- Professional & Educational Details Section ---
-        document.add(new Paragraph("Professional & Educational Details", sectionTitleFont));
+        // Professional Details
+        document.add(new Paragraph("Professional Details", sectionFont));
         document.add(Chunk.NEWLINE);
 
-        addDetailRow(document, "Education:", profile.getEducation(), headerFont, normalFont);
-        addDetailRow(document, "Occupation:", profile.getOccupation(), headerFont, normalFont);
-        addDetailRow(document, "Annual Income:", profile.getAnnualIncome() != null ? "INR " + String.format("%,.2f", profile.getAnnualIncome()) : "N/A", headerFont, normalFont);
+        addKeyValue(document, "Education:", profile.getEducation(), labelFont, contentFont);
+        addKeyValue(document, "Occupation:", profile.getOccupation(), labelFont, contentFont);
+        addKeyValue(document, "Annual Income:", profile.getAnnualIncome() != null ? String.format("₹%.2f", profile.getAnnualIncome()) : "N/A", labelFont, contentFont);
+
         document.add(Chunk.NEWLINE);
 
-        // --- Location Details Section ---
-        document.add(new Paragraph("Location Details", sectionTitleFont));
+        // Location Details
+        document.add(new Paragraph("Location Details", sectionFont));
         document.add(Chunk.NEWLINE);
 
-        addDetailRow(document, "City:", profile.getCity(), headerFont, normalFont);
-        addDetailRow(document, "State:", profile.getState(), headerFont, normalFont);
-        addDetailRow(document, "Country:", profile.getCountry(), headerFont, normalFont);
+        addKeyValue(document, "City:", profile.getCity(), labelFont, contentFont);
+        addKeyValue(document, "State:", profile.getState(), labelFont, contentFont);
+        addKeyValue(document, "Country:", profile.getCountry(), labelFont, contentFont);
+
         document.add(Chunk.NEWLINE);
 
-        // --- About Me Section ---
+        // About Me
         if (profile.getAboutMe() != null && !profile.getAboutMe().isEmpty()) {
-            document.add(new Paragraph("About Me", sectionTitleFont));
+            document.add(new Paragraph("About Me", sectionFont));
             document.add(Chunk.NEWLINE);
-            Paragraph aboutMe = new Paragraph(profile.getAboutMe(), normalFont);
-            document.add(aboutMe);
-            document.add(Chunk.NEWLINE);
-        }
-
-        // --- Preferred Partner Details Section (Optional) ---
-        if (profile.getPreferredPartnerMinAge() != null || profile.getPreferredPartnerReligion() != null) {
-            document.add(new Paragraph("Preferred Partner Details", sectionTitleFont));
-            document.add(Chunk.NEWLINE);
-
-            String ageRange = "N/A";
-            if (profile.getPreferredPartnerMinAge() != null && profile.getPreferredPartnerMaxAge() != null) {
-                ageRange = profile.getPreferredPartnerMinAge() + " - " + profile.getPreferredPartnerMaxAge() + " years";
-            } else if (profile.getPreferredPartnerMinAge() != null) {
-                ageRange = profile.getPreferredPartnerMinAge() + " years and above";
-            } else if (profile.getPreferredPartnerMaxAge() != null) {
-                ageRange = "Up to " + profile.getPreferredPartnerMaxAge() + " years";
-            }
-            addDetailRow(document, "Age Range:", ageRange, headerFont, normalFont);
-            addDetailRow(document, "Religion:", profile.getPreferredPartnerReligion(), headerFont, normalFont);
-            addDetailRow(document, "Caste:", profile.getPreferredPartnerCaste(), headerFont, normalFont);
-
-            String heightRange = "N/A";
-            if (profile.getPreferredPartnerMinHeightCm() != null && profile.getPreferredPartnerMaxHeightCm() != null) {
-                heightRange = profile.getPreferredPartnerMinHeightCm() + " - " + profile.getPreferredPartnerMaxHeightCm() + " cm";
-            } else if (profile.getPreferredPartnerMinHeightCm() != null) {
-                heightRange = profile.getPreferredPartnerMinHeightCm() + " cm and above";
-            } else if (profile.getPreferredPartnerMaxHeightCm() != null) {
-                heightRange = "Up to " + profile.getPreferredPartnerMaxHeightCm() + " cm";
-            }
-            addDetailRow(document, "Height Range:", heightRange, headerFont, normalFont);
+            Paragraph aboutMeContent = new Paragraph(profile.getAboutMe(), contentFont);
+            aboutMeContent.setAlignment(Element.ALIGN_JUSTIFIED);
+            document.add(aboutMeContent);
             document.add(Chunk.NEWLINE);
         }
 
-        // Important: Contact details are intentionally NOT added here as per requirement.
-
-        // Close the document
         document.close();
-
-        return baos;
+        return baos.toByteArray();
     }
 
-    /**
-     * Helper method to add a detail row (Label: Value) to the document.
-     *
-     * @param document The PDF document.
-     * @param label The label for the detail (e.g., "Full Name:").
-     * @param value The actual value.
-     * @param labelFont Font for the label.
-     * @param valueFont Font for the value.
-     * @throws DocumentException
-     */
-    private void addDetailRow(Document document, String label, String value, Font labelFont, Font valueFont) throws DocumentException {
+    private void addKeyValue(Document document, String label, String value, Font labelFont, Font contentFont) throws DocumentException {
         Paragraph p = new Paragraph();
         p.add(new Chunk(label, labelFont));
-        p.add(new Chunk(" " + (value != null && !value.isEmpty() ? value : "N/A"), valueFont));
-        p.setSpacingAfter(2); // Small spacing after each detail line
+        p.add(new Chunk(" ", labelFont)); // Small space
+        p.add(new Chunk(value != null ? value : "N/A", contentFont));
         document.add(p);
     }
 }

@@ -1,6 +1,5 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/MarriageBureauSoftwareApplication.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/UserPrincipal.java
-/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/repository/UserRepository.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/UserRole.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/MaritalStatus.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/AuthController.java
@@ -18,12 +17,14 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/JwtTokenProvider.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/ProfileService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/AppUserController.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/AuthRequest.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/AuthResponse.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/ActiveProfiles.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/JwtAuthenticationFilter.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/repository/ProfileRepository.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/BiodataPdfService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/CustomUserDetailsService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/user/Role.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/repository/AppUserRepository.java
-/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/HomeController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/SecurityConfig.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/user/User.java

@@ -1,4 +1,3 @@
-// src/main/java/com/marriagebureau/MarriageBureauSoftwareApplication.java
 package com.marriagebureau;
 
 import org.springframework.boot.SpringApplication;

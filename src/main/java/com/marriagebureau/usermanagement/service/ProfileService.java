@@ -1,14 +1,11 @@
 package com.marriagebureau.usermanagement.service;
 
-import com.marriagebureau.usermanagement.entity.AppUser;
 import com.marriagebureau.usermanagement.entity.Profile;
-import com.marriagebureau.security.payload.ProfileSearchDto; // CORRECTED IMPORT
-import com.marriagebureau.usermanagement.repository.AppUserRepository;
+import com.marriagebureau.usermanagement.entity.AppUser; // Import AppUser
 import com.marriagebureau.usermanagement.repository.ProfileRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.marriagebureau.usermanagement.repository.AppUserRepository; // Import AppUserRepository
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,108 +13,107 @@ import java.util.Optional;
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final AppUserRepository appUserRepository;
+    private final AppUserRepository appUserRepository; // Inject AppUserRepository
 
-    @Autowired
     public ProfileService(ProfileRepository profileRepository, AppUserRepository appUserRepository) {
         this.profileRepository = profileRepository;
         this.appUserRepository = appUserRepository;
     }
 
-    @Transactional
-    public Optional<Profile> createProfile(Profile profile, Long userId) {
-        Optional<AppUser> existingUser = appUserRepository.findById(userId);
-        if (existingUser.isEmpty()) {
-            return Optional.empty();
-        }
-
-        AppUser appUser = existingUser.get();
-
-        if (profileRepository.findByAppUser_Id(userId).isPresent()) { // Corrected findByAppUserId to findByAppUser_Id
-            return Optional.empty();
-        }
-
-        profile.setAppUser(appUser);
-        Profile savedProfile = profileRepository.save(profile);
-        return Optional.of(savedProfile);
+    // --- Create Profile ---
+    // This method needs to link the profile to an existing AppUser
+    public Profile createProfile(Long appUserId, Profile profile) {
+        AppUser appUser = appUserRepository.findById(appUserId)
+            .orElseThrow(() -> new RuntimeException("AppUser not found with id " + appUserId));
+        profile.setAppUser(appUser); // Link the Profile to the AppUser object
+        return profileRepository.save(profile);
     }
 
-    public Optional<Profile> getProfileById(Long id) {
-        return profileRepository.findById(id);
-    }
-
-    public Optional<Profile> getProfileByAppUserId(Long appUserId) {
-        return profileRepository.findByAppUser_Id(appUserId); // Corrected findByAppUserId to findByAppUser_Id
-    }
-
+    // --- Get All Profiles ---
     public List<Profile> getAllProfiles() {
         return profileRepository.findAll();
     }
 
-    @Transactional
-    public Optional<Profile> updateProfile(Long id, Profile updatedProfile) {
-        return profileRepository.findById(id).map(existingProfile -> {
-            existingProfile.setFullName(updatedProfile.getFullName());
-            existingProfile.setDateOfBirth(updatedProfile.getDateOfBirth());
-            existingProfile.setGender(updatedProfile.getGender());
-            existingProfile.setReligion(updatedProfile.getReligion());
-            existingProfile.setCaste(updatedProfile.getCaste());
-            existingProfile.setSubCaste(updatedProfile.getSubCaste());
-            existingProfile.setMaritalStatus(updatedProfile.getMaritalStatus());
-            existingProfile.setHeightCm(updatedProfile.getHeightCm());
-            existingProfile.setComplexion(updatedProfile.getComplexion());
-            existingProfile.setBodyType(updatedProfile.getBodyType());
-            existingProfile.setEducation(updatedProfile.getEducation());
-            existingProfile.setOccupation(updatedProfile.getOccupation());
-            existingProfile.setAnnualIncome(updatedProfile.getAnnualIncome());
-            existingProfile.setCity(updatedProfile.getCity());
-            existingProfile.setState(updatedProfile.getState());
-            existingProfile.setCountry(updatedProfile.getCountry());
-            existingProfile.setAboutMe(updatedProfile.getAboutMe());
-            existingProfile.setPhotoUrl(updatedProfile.getPhotoUrl());
-            existingProfile.setActive(updatedProfile.isActive());
-
-            existingProfile.setPreferredPartnerMinAge(updatedProfile.getPreferredPartnerMinAge());
-            existingProfile.setPreferredPartnerMaxAge(updatedProfile.getPreferredPartnerMaxAge());
-            existingProfile.setPreferredPartnerReligion(updatedProfile.getPreferredPartnerReligion());
-            existingProfile.setPreferredPartnerCaste(updatedProfile.getPreferredPartnerCaste());
-            existingProfile.setPreferredPartnerMinHeightCm(updatedProfile.getPreferredPartnerMinHeightCm());
-            existingProfile.setPreferredPartnerMaxHeightCm(updatedProfile.getPreferredPartnerMaxHeightCm());
-
-            return profileRepository.save(existingProfile);
-        }).or(Optional::empty);
+    // --- Get Profile by ID ---
+    public Optional<Profile> getProfileById(Long profileId) {
+        return profileRepository.findById(profileId);
     }
 
+    // --- Update Profile ---
     @Transactional
-    public boolean deleteProfile(Long id) {
-        if (profileRepository.existsById(id)) {
-            profileRepository.deleteById(id);
-            return true;
+    public Profile updateProfile(Long appUserId, Long profileId, Profile updatedProfile) {
+        return profileRepository.findById(profileId).map(profile -> {
+            // Ensure the appUser for this profile matches the appUserId from the path
+            if (!profile.getAppUser().getId().equals(appUserId)) {
+                throw new RuntimeException("Unauthorized: Profile does not belong to this user.");
+            }
+
+            // Update fields based on your Profile entity's actual getters/setters
+            profile.setFullName(updatedProfile.getFullName());
+            profile.setDateOfBirth(updatedProfile.getDateOfBirth());
+            profile.setGender(updatedProfile.getGender());
+            profile.setReligion(updatedProfile.getReligion());
+            profile.setCaste(updatedProfile.getCaste());
+            profile.setSubCaste(updatedProfile.getSubCaste());
+            profile.setMaritalStatus(updatedProfile.getMaritalStatus());
+            profile.setHeightCm(updatedProfile.getHeightCm());
+            profile.setComplexion(updatedProfile.getComplexion());
+            profile.setBodyType(updatedProfile.getBodyType());
+            profile.setEducation(updatedProfile.getEducation());
+            profile.setOccupation(updatedProfile.getOccupation());
+            profile.setAnnualIncome(updatedProfile.getAnnualIncome());
+            profile.setCity(updatedProfile.getCity());
+            profile.setState(updatedProfile.getState());
+            profile.setCountry(updatedProfile.getCountry());
+            profile.setAboutMe(updatedProfile.getAboutMe());
+            profile.setPhotoUrl(updatedProfile.getPhotoUrl());
+            profile.setActive(updatedProfile.isActive()); // For boolean is/set
+            profile.setPreferredPartnerMinAge(updatedProfile.getPreferredPartnerMinAge());
+            profile.setPreferredPartnerMaxAge(updatedProfile.getPreferredPartnerMaxAge());
+            profile.setPreferredPartnerReligion(updatedProfile.getPreferredPartnerReligion());
+            profile.setPreferredPartnerCaste(updatedProfile.getPreferredPartnerCaste());
+            profile.setPreferredPartnerMinHeightCm(updatedProfile.getPreferredPartnerMinHeightCm());
+            profile.setPreferredPartnerMaxHeightCm(updatedProfile.getPreferredPartnerMaxHeightCm());
+
+            return profileRepository.save(profile);
+        }).orElseThrow(() -> new RuntimeException("Profile not found with id " + profileId));
+    }
+
+    // --- Delete Profile ---
+    public void deleteProfile(Long appUserId, Long profileId) {
+        Profile profile = profileRepository.findById(profileId)
+            .orElseThrow(() -> new RuntimeException("Profile not found with id " + profileId));
+
+        if (!profile.getAppUser().getId().equals(appUserId)) {
+            throw new RuntimeException("Unauthorized: Profile does not belong to this user.");
         }
-        return false;
+        profileRepository.delete(profile);
     }
 
-    /**
-     * Searches for profiles based on provided criteria.
-     *
-     * @param searchDto The DTO containing search parameters.
-     * @return A list of profiles matching the criteria.
-     */
-    public List<Profile> searchProfiles(ProfileSearchDto searchDto) {
-        return profileRepository.findBySearchCriteria( // Changed method name
-                searchDto.getGender(),
-                searchDto.getMinAge(),
-                searchDto.getMaxAge(),
-                searchDto.getReligion(),
-                searchDto.getCaste(),
-                searchDto.getMaritalStatus(),
-                searchDto.getMinHeightCm(),
-                searchDto.getMaxHeightCm(),
-                searchDto.getCity(),
-                searchDto.getState(),
-                searchDto.getCountry(),
-                searchDto.getEducation(),
-                searchDto.getOccupation()
+    // --- Search Profiles ---
+    // Adjust this method signature and implementation to use the new Profile fields
+    // The controller's search call and this method's parameters must match.
+    public List<Profile> searchProfiles(
+        String gender,
+        String religion,
+        String caste,
+        Integer minAge,
+        Integer maxAge,
+        Double minHeightCm, // Use heightCm
+        Double maxHeightCm, // Use heightCm
+        String maritalStatus, // Add maritalStatus if needed in search
+        String education,
+        String occupation,
+        String city,
+        String state,
+        String country
+    ) {
+        // Implement your search logic here using profileRepository.findBySearchCriteria
+        // Make sure findBySearchCriteria exists in ProfileRepository with this exact signature
+        return profileRepository.findBySearchCriteria(
+            gender, religion, caste, minAge, maxAge,
+            minHeightCm, maxHeightCm, maritalStatus,
+            education, occupation, city, state, country
         );
     }
 }

@@ -1,3 +1,4 @@
+// src/main/java/com/marriagebureau/security/CustomUserDetailsService.java
 package com.marriagebureau.security;
 
 import com.marriagebureau.usermanagement.entity.AppUser;
@@ -8,21 +9,20 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final AppUserRepository appUserRepository;
-
     @Autowired
-    public CustomUserDetailsService(AppUserRepository appUserRepository) {
-        this.appUserRepository = appUserRepository;
-    }
+    private AppUserRepository appUserRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AppUser appUser = appUserRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        AppUser appUser = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        return new UserPrincipal(appUser);
+        // AppUser now implements UserDetails directly
+        return appUser;
     }
 }

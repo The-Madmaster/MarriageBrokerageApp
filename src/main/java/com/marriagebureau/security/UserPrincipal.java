@@ -1,34 +1,47 @@
+// src/main/java/com/marriagebureau/security/UserPrincipal.java
 package com.marriagebureau.security;
 
 import com.marriagebureau.usermanagement.entity.AppUser;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.List; // Import List
 
+// This class might become redundant if AppUser directly implements UserDetails
+// But if you still need it for some reason, here's the fix.
 public class UserPrincipal implements UserDetails {
 
-    private final Long userId;
-    private final String username;
-    private final String password;
-    private final Collection<? extends GrantedAuthority> authorities;
-    private final boolean enabled;
+    private Long id;
+    private String email;
+    private String password;
+    private Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(AppUser appUser) {
-        this.userId = appUser.getId(); // Lombok generated getId()
-        this.username = appUser.getUsername(); // Lombok generated getUsername()
-        this.password = appUser.getPassword(); // Lombok generated getPassword()
-        this.enabled = appUser.isEnabled(); // Lombok generated isEnabled() for boolean field 'enabled'
-        this.authorities = appUser.getRoles().stream() // Lombok generated getRoles()
-                                  .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
-                                  .collect(Collectors.toList());
+    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.authorities = authorities;
     }
 
-    public Long getUserId() {
-        return userId;
+    public static UserPrincipal create(AppUser appUser) {
+        // AppUser's getAuthorities method should return the list of authorities
+        List<GrantedAuthority> authorities = (List<GrantedAuthority>) appUser.getAuthorities();
+
+        return new UserPrincipal(
+                appUser.getId(),
+                appUser.getEmail(), // Use getEmail()
+                appUser.getPassword(), // Use getPassword()
+                authorities
+        );
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     @Override
@@ -43,7 +56,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public String getUsername() {
-        return username;
+        return email; // Use email as username
     }
 
     @Override
@@ -63,6 +76,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return true;
     }
 }

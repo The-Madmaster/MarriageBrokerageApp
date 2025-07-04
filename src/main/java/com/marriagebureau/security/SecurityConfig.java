@@ -1,54 +1,83 @@
-    // src/main/java/com/marriagebureau/config/SecurityConfig.java
-    package com.marriagebureau.config;
+// src/main/java/com/marriagebureau/security/SecurityConfig.java
+package com.marriagebureau.security;
 
-    import com.marriagebureau.security.JwtAuthenticationFilter; // Import your JWT filter
-    import lombok.RequiredArgsConstructor;
-    import org.springframework.context.annotation.Bean;
-    import org.springframework.context.annotation.Configuration;
-    import org.springframework.security.authentication.AuthenticationProvider;
-    import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-    import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-    import org.springframework.security.config.http.SessionCreationPolicy;
-    import org.springframework.security.web.SecurityFilterChain;
-    import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-    @Configuration // Marks this class as a source of bean definitions
-    @EnableWebSecurity // Enables Spring Security's web security features
-    @RequiredArgsConstructor // Lombok: Generates a constructor with required arguments (final fields)
-    public class SecurityConfig {
+import java.util.List;
 
-        private final JwtAuthenticationFilter jwtAuthFilter; // Injects the JWT authentication filter
-        private final AuthenticationProvider authenticationProvider; // Injects the custom authentication provider
+/**
+ * Spring Security configuration class.
+ * Configures security filters, authentication providers, and authorization rules.
+ */
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity // Enables method-level security annotations like @PreAuthorize
+@RequiredArgsConstructor
+public class SecurityConfig {
 
-        // Defines the security filter chain, which configures HTTP security for different requests.
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            http
-                .csrf(csrf -> csrf.disable()) // Disable CSRF protection as we are using JWT (stateless)
-                .authorizeHttpRequests(auth -> auth
-                    // Allow unauthenticated access to authentication endpoints
-                    .requestMatchers("/api/v1/auth/**").permitAll()
-                    // Allow unauthenticated access to the H2 console (for development/debugging)
-                    // Note: In production, you would secure or disable the H2 console.
-                    .requestMatchers("/h2-console/**").permitAll()
-                    // Allow access to static resources (e.g., index.html, CSS, JS)
-                    .requestMatchers("/", "/index.html", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
-                    // All other requests require authentication
-                    .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session
-                    // Set session creation policy to stateless, as JWTs are self-contained
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .authenticationProvider(authenticationProvider) // Register the custom authentication provider
-                // Add the JWT authentication filter before the UsernamePasswordAuthenticationFilter
-                // This ensures JWTs are processed before Spring's default authentication
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
 
-            // Enable H2 console frame options for proper display in a browser (if using H2)
-            http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
+    /**
+     * Configures the security filter chain.
+     * Defines which requests require authentication and which are permitted.
+     * Sets up JWT authentication and session management.
+     *
+     * @param http The HttpSecurity object to configure.
+     * @return The configured SecurityFilterChain.
+     * @throws Exception if an error occurs during configuration.
+     */
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless API (JWT)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
+            .authorizeHttpRequests(authorize -> authorize
+                // Allow access to static resources and H2 console
+                .requestMatchers("/", "/index.html", "/static/**", "/h2-console/**").permitAll()
+                // Allow public access to authentication and registration endpoints
+                // CORRECTED: Permit the actual login endpoint
+                .requestMatchers("/api/auth/login", "/api/users").permitAll() // "/api/users" for registration if applicable
+                // All other requests require authentication
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Use stateless sessions for JWT
+            )
+            .authenticationProvider(authenticationProvider) // Set custom authentication provider
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter before username/password filter
 
-            return http.build(); // Build and return the SecurityFilterChain
-        }
+        return http.build();
     }
-    
+
+    /**
+     * Configures CORS (Cross-Origin Resource Sharing) for the application.
+     * Allows requests from any origin, with specific methods and headers.
+     *
+     * @return CorsConfigurationSource for CORS settings.
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("*")); // Allow all origins for development
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP methods
+        configuration.setAllowedHeaders(List.of("*")); // Allow all headers
+        configuration.setAllowCredentials(true); // Allow credentials (e.g., cookies, authorization headers)
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // Apply CORS to all paths
+        return source;
+    }
+}

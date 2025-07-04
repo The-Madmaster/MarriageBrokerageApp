@@ -2,12 +2,10 @@ package com.marriagebureau.usermanagement.service;
 
 import com.marriagebureau.usermanagement.entity.AppUser;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder; // Needed for encoding passwords
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,61 +13,53 @@ import java.util.Optional;
 public class AppUserService {
 
     private final AppUserRepository appUserRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
 
-    @Autowired
     public AppUserService(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
         this.appUserRepository = appUserRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordEncoder = passwordEncoder; // Initialize PasswordEncoder
     }
 
-    @Transactional
-    public AppUser createUser(AppUser user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        if (user.getRoles() == null || user.getRoles().isEmpty()) {
-            // FIX: Ensure this line uses ROLE_USER
-            user.setRoles(Collections.singletonList(AppUser.Role.ROLE_USER));
-        }
-        user.setEnabled(true);
-        return appUserRepository.save(user);
-    }
-
-    public Optional<AppUser> findByUsername(String username) {
-        return appUserRepository.findByUsername(username);
-    }
-
-    public Optional<AppUser> findByEmail(String email) {
-        return appUserRepository.findByEmail(email);
-    }
-
-    public Optional<AppUser> findByContactNumber(String contactNumber) {
-        return appUserRepository.findByContactNumber(contactNumber);
-    }
-
-    public Optional<AppUser> findById(Long id) {
-        return appUserRepository.findById(id);
+    // Method for registering a new user (as called by AuthController)
+    public AppUser registerNewUser(AppUser appUser) {
+        // Encode the password before saving
+        appUser.setPassword(passwordEncoder.encode(appUser.getPassword()));
+        // You might want to set default roles or other initializations here
+        return appUserRepository.save(appUser);
     }
 
     public List<AppUser> findAllUsers() {
         return appUserRepository.findAll();
     }
 
-    @Transactional
-    public Optional<AppUser> updateUser(Long id, AppUser userDetails) {
-        return appUserRepository.findById(id).map(existingUser -> {
-            existingUser.setEmail(userDetails.getEmail());
-            existingUser.setContactNumber(userDetails.getContactNumber());
-            existingUser.setEnabled(userDetails.isEnabled());
-            return appUserRepository.save(existingUser);
-        });
+    public Optional<AppUser> findUserById(Long id) {
+        return appUserRepository.findById(id);
     }
 
     @Transactional
-    public boolean deleteUser(Long id) {
-        if (appUserRepository.existsById(id)) {
-            appUserRepository.deleteById(id);
-            return true;
+    public AppUser updateUser(Long id, AppUser updatedAppUser) {
+        return appUserRepository.findById(id)
+                .map(existingUser -> {
+                    existingUser.setEmail(updatedAppUser.getEmail());
+                    // Only update password if it's explicitly set and needs re-encoding
+                    if (updatedAppUser.getPassword() != null && !updatedAppUser.getPassword().isEmpty()) {
+                        existingUser.setPassword(passwordEncoder.encode(updatedAppUser.getPassword()));
+                    }
+                    existingUser.setRole(updatedAppUser.getRole());
+                    // Update other fields as necessary from updatedAppUser
+                    return appUserRepository.save(existingUser);
+                })
+                .orElseThrow(() -> new RuntimeException("User not found with id " + id));
+    }
+
+    public void deleteUser(Long id) {
+        if (!appUserRepository.existsById(id)) {
+            throw new RuntimeException("User not found with id " + id);
         }
-        return false;
+        appUserRepository.deleteById(id);
+    }
+
+    public Optional<AppUser> findByEmail(String email) {
+        return appUserRepository.findByEmail(email);
     }
 }
