@@ -1,8 +1,14 @@
 package com.marriagebureau.security.payload;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data // Lombok annotation to generate getters, setters, toString, equals, and hashCode
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor // Crucial for providing a constructor that takes all arguments
 public class LoginDto {
     private String username;
     private String password;

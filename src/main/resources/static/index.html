@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marriage Bureau Login & Protected Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+        }
+        /* Ensure the main container is centered and has rounded corners */
+        .main-container { /* Renamed for clarity to avoid conflict with login-container */
+            background-color: #ffffff; /* White background for the form */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            border-radius: 12px; /* Rounded corners */
+            padding: 2.5rem; /* Increased padding */
+            width: 100%;
+            max-width: 450px; /* Max width for larger screens */
+            text-align: center;
+        }
+        /* Style for input fields */
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 8px; /* Rounded corners for inputs */
+            box-sizing: border-box; /* Include padding in width */
+        }
+        /* Style for buttons */
+        .action-button {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s ease; /* Smooth transition on hover */
+            cursor: pointer;
+            margin-bottom: 0.5rem; /* Space between buttons */
+        }
+        .action-button:hover {
+            background-color: #4338ca; /* Indigo 700 on hover */
+        }
+        .action-button.secondary { /* For 'Get Protected Data' */
+            background-color: #10b981; /* Emerald 500 */
+        }
+        .action-button.secondary:hover {
+            background-color: #059669; /* Emerald 600 */
+        }
+        .action-button.danger { /* For 'Logout' */
+            background-color: #ef4444; /* Red 500 */
+        }
+        .action-button.danger:hover {
+            background-color: #dc2626; /* Red 600 */
+        }
+        /* Message box styling */
+        .message-box {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-weight: bold;
+            text-align: left; /* Align message text to left */
+            word-wrap: break-word; /* Ensure long tokens wrap */
+        }
+        .message-box.success {
+            background-color: #d1fae5; /* Green 100 */
+            color: #065f46; /* Green 800 */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Red 100 */
+            color: #991b1b; /* Red 800 */
+        }
+        #protectedDataDisplay {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px dashed #6366f1; /* Indigo 400 */
+            border-radius: 8px;
+            min-height: 50px;
+            text-align: left;
+            background-color: #f8fafc; /* Blue Gray 50 */
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Marriage Bureau Login</h2>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <input type="email" id="email" name="email" placeholder="Email address" value="admin@example.com" required class="input-field">
+            </div>
+            <div>
+                <input type="password" id="password" name="password" placeholder="Password" value="adminpassword" required class="input-field">
+            </div>
+            <button type="submit" class="action-button">Sign in</button>
+        </form>
+
+        <hr class="my-6 border-gray-300">
+
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Protected Resource Access</h2>
+        <button onclick="getProtectedData()" class="action-button secondary">Get Protected Data</button>
+        <button onclick="logout()" class="action-button danger">Logout</button>
+        <div id="protectedDataDisplay" class="message-box">No protected data fetched yet.</div>
+
+        <div id="message" class="message-box hidden"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'http://localhost:8080/api'; // Ensure this matches your Spring Boot app's port
+            const loginForm = document.getElementById('loginForm');
+            const messageBox = document.getElementById('message');
+            const protectedDataDisplay = document.getElementById('protectedDataDisplay');
+
+            // --- Helper Functions ---
+
+            function showMessage(message, type) {
+                messageBox.textContent = message;
+                messageBox.className = `message-box ${type}`;
+                messageBox.classList.remove('hidden');
+            }
+
+            function clearMessages() {
+                messageBox.classList.add('hidden');
+                messageBox.textContent = '';
+                protectedDataDisplay.textContent = 'No protected data fetched yet.';
+            }
+
+            /**
+             * Client-Side Storage: Stores the JWT in localStorage.
+             * Your backend's AuthResponse sends 'accessToken'.
+             */
+            function storeAuthInfo(authResponseData) {
+                localStorage.setItem('jwtToken', authResponseData.accessToken);
+                localStorage.setItem('userId', authResponseData.userId);
+                localStorage.setItem('username', authResponseData.username);
+                localStorage.setItem('email', authResponseData.email); // Store email if needed
+
+                console.log('Authentication Info Stored:', authResponseData);
+                showMessage('Login successful! Token and user info stored.', 'success');
+            }
+
+            /**
+             * Retrieves the JWT from localStorage.
+             */
+            function getStoredToken() {
+                return localStorage.getItem('jwtToken');
+            }
+
+            /**
+             * Removes all authentication info from localStorage (logout).
+             */
+            function logout() {
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('email');
+                console.log('Authentication Info Removed. User logged out.');
+                showMessage('You have been logged out.', 'success');
+                protectedDataDisplay.textContent = 'No protected data fetched yet.';
+            }
+
+            // --- Event Listeners ---
+
+            loginForm.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Prevent default form submission
+                clearMessages(); // Clear previous messages
+
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json(); // Parse the JSON response first
+
+                    if (response.ok) { // Check if the HTTP status code is 2xx (success)
+                        if (data.accessToken) {
+                            storeAuthInfo(data); // Store the entire AuthResponse data
+                        } else {
+                            throw new Error('Authentication failed: No access token received.');
+                        }
+                    } else {
+                        // Handle errors (e.g., invalid credentials)
+                        const errorMessage = data.message || data.error || 'Login failed. Please check your credentials.';
+                        throw new Error(errorMessage);
+                    }
+                } catch (error) {
+                    // Handle network errors or other unexpected issues
+                    console.error('Login Fetch Error:', error);
+                    showMessage(`Login Error: ${error.message}`, 'error');
+                }
+            });
+
+            /**
+             * Sending the Token with Requests: Includes the JWT in the Authorization header.
+             */
+            window.getProtectedData = async () => { // Make it global for onclick
+                clearMessages(); // Clear previous messages
+                const token = getStoredToken();
+
+                if (!token) {
+                    showMessage('Access Denied: No token found. Please log in first.', 'error');
+                    protectedDataDisplay.textContent = 'Access Denied: No Token.';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/protected-resource`, { // Point to your protected endpoint
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}` // <--- IMPORTANT: Sending the token!
+                        }
+                    });
+
+                    // Parse text for simple response, or json() for JSON response
+                    const contentType = response.headers.get("content-type");
+                    const data = contentType && contentType.includes("application/json")
+                               ? await response.json()
+                               : await response.text();
+
+                    if (response.ok) {
+                        protectedDataDisplay.textContent = `Protected Data: ${JSON.stringify(data, null, 2)}`;
+                        showMessage('Successfully fetched protected data!', 'success');
+                    } else {
+                        // Handle cases like 401 Unauthorized, 403 Forbidden
+                        const errorMessage = data.message || data.error || 'Failed to fetch protected data. Access denied.';
+                        throw new Error(errorMessage);
+                    }
+
+                } catch (error) {
+                    console.error('Protected Data Fetch Error:', error);
+                    showMessage(`Error fetching protected data: ${error.message}`, 'error');
+                    protectedDataDisplay.textContent = `Error: ${error.message}`;
+                }
+            };
+
+            window.logout = logout; // Make logout global for onclick
+        });
+    </script>
+</body>
+</html>

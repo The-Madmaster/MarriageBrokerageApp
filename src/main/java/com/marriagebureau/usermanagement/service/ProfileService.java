@@ -1,15 +1,11 @@
-package com.marriagebureau.usermanagement.service; // Corrected package name
+package com.marriagebureau.usermanagement.service;
 
-import com.marriagebureau.entity.AppProfile; // Changed from Profile to AppProfile
-import com.marriagebureau.entity.AppUser;    // Changed from User to AppUser
-import com.marriagebureau.usermanagement.repository.ProfileRepository; // Corrected package and name
-import com.marriagebureau.usermanagement.repository.AppUserRepository; // Changed from UserRepository to AppUserRepository
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.marriagebureau.usermanagement.entity.Profile;
+import com.marriagebureau.usermanagement.entity.AppUser; // Import AppUser
+import com.marriagebureau.usermanagement.repository.ProfileRepository;
+import com.marriagebureau.usermanagement.repository.AppUserRepository; // Import AppUserRepository
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,96 +13,107 @@ import java.util.Optional;
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final AppUserRepository appUserRepository; // Changed from UserRepository to AppUserRepository
+    private final AppUserRepository appUserRepository; // Inject AppUserRepository
 
-    @Autowired
-    public ProfileService(ProfileRepository profileRepository, AppUserRepository appUserRepository) { // Changed parameter type
+    public ProfileService(ProfileRepository profileRepository, AppUserRepository appUserRepository) {
         this.profileRepository = profileRepository;
-        this.appUserRepository = appUserRepository; // Corrected variable name
+        this.appUserRepository = appUserRepository;
     }
 
-    @Transactional
-    public AppProfile createProfile(AppProfile profile, Long userId) { // Changed return type and parameter type
-        // Ensure the AppUser exists before creating a profile linked to them
-        AppUser appUser = appUserRepository.findById(userId) // Changed User to AppUser and userRepository to appUserRepository
-                                         .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
-
-        profile.setCreatedByUser(appUser); // Link the profile to the appUser
-        profile.setCreatedDate(LocalDateTime.now());
-        profile.setLastUpdatedDate(LocalDateTime.now());
-        profile.setActive(true); // Default to active
-
-        // You might add more business logic here, e.g., validation
+    // --- Create Profile ---
+    // This method needs to link the profile to an existing AppUser
+    public Profile createProfile(Long appUserId, Profile profile) {
+        AppUser appUser = appUserRepository.findById(appUserId)
+            .orElseThrow(() -> new RuntimeException("AppUser not found with id " + appUserId));
+        profile.setAppUser(appUser); // Link the Profile to the AppUser object
         return profileRepository.save(profile);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<AppProfile> getProfileById(Long id) { // Changed return type
-        return profileRepository.findById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<AppProfile> getProfileByUserId(Long userId) { // Changed return type
-        return profileRepository.findByCreatedByUser_Id(userId);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<AppProfile> getProfileByEmail(String email) { // Changed return type
-        return profileRepository.findByEmail(email);
-    }
-
-    @Transactional(readOnly = true)
-    public List<AppProfile> getAllProfiles() { // Changed return type
+    // --- Get All Profiles ---
+    public List<Profile> getAllProfiles() {
         return profileRepository.findAll();
     }
 
-    @Transactional
-    public AppProfile updateProfile(Long id, AppProfile updatedProfileDetails) { // Changed return type and parameter type
-        AppProfile existingProfile = profileRepository.findById(id) // Changed type
-                .orElseThrow(() -> new EntityNotFoundException("Profile not found with ID: " + id));
-
-        // Update fields individually to avoid overwriting with nulls unless intended
-        existingProfile.setFullName(updatedProfileDetails.getFullName());
-        existingProfile.setGender(updatedProfileDetails.getGender());
-        existingProfile.setDateOfBirth(updatedProfileDetails.getDateOfBirth());
-        existingProfile.setReligion(updatedProfileDetails.getReligion());
-        existingProfile.setMaritalStatus(updatedProfileDetails.getMaritalStatus());
-        existingProfile.setAboutMe(updatedProfileDetails.getAboutMe());
-        existingProfile.setPhotoUrl(updatedProfileDetails.getPhotoUrl());
-        existingProfile.setContactNumber(updatedProfileDetails.getContactNumber());
-        existingProfile.setEmail(updatedProfileDetails.getEmail());
-        existingProfile.setEducation(updatedProfileDetails.getEducation());
-        existingProfile.setOccupation(updatedProfileDetails.getOccupation());
-        existingProfile.setAnnualIncome(updatedProfileDetails.getAnnualIncome());
-        existingProfile.setCity(updatedProfileDetails.getCity());
-        existingProfile.setState(updatedProfileDetails.getState());
-        existingProfile.setCountry(updatedProfileDetails.getCountry());
-        existingProfile.setCaste(updatedProfileDetails.getCaste());
-        existingProfile.setSubCaste(updatedProfileDetails.getSubCaste());
-        existingProfile.setHeightCm(updatedProfileDetails.getHeightCm());
-        existingProfile.setBodyType(updatedProfileDetails.getBodyType());
-        existingProfile.setComplexion(updatedProfileDetails.getComplexion());
-        existingProfile.setPreferredPartnerMinAge(updatedProfileDetails.getPreferredPartnerMinAge());
-        existingProfile.setPreferredPartnerMaxAge(updatedProfileDetails.getPreferredPartnerMaxAge());
-        existingProfile.setPreferredPartnerMinHeightCm(updatedProfileDetails.getPreferredPartnerMinHeightCm());
-        existingProfile.setPreferredPartnerMaxHeightCm(updatedProfileDetails.getPreferredPartnerMaxHeightCm());
-        existingProfile.setPreferredPartnerReligion(updatedProfileDetails.getPreferredPartnerReligion());
-        existingProfile.setPreferredPartnerCaste(updatedProfileDetails.getPreferredPartnerCaste());
-
-        existingProfile.setLastUpdatedDate(LocalDateTime.now());
-        existingProfile.setActive(updatedProfileDetails.isActive()); // Allow updating active status
-
-        return profileRepository.save(existingProfile);
+    // --- Get Profile by ID ---
+    public Optional<Profile> getProfileById(Long profileId) {
+        return profileRepository.findById(profileId);
     }
 
+    // --- Update Profile ---
     @Transactional
-    public void deleteProfile(Long id) {
-        if (!profileRepository.existsById(id)) {
-            throw new EntityNotFoundException("Profile not found with ID: " + id);
+    public Profile updateProfile(Long appUserId, Long profileId, Profile updatedProfile) {
+        return profileRepository.findById(profileId).map(profile -> {
+            // Ensure the appUser for this profile matches the appUserId from the path
+            if (!profile.getAppUser().getId().equals(appUserId)) {
+                throw new RuntimeException("Unauthorized: Profile does not belong to this user.");
+            }
+
+            // Update fields based on your Profile entity's actual getters/setters
+            profile.setFullName(updatedProfile.getFullName());
+            profile.setDateOfBirth(updatedProfile.getDateOfBirth());
+            profile.setGender(updatedProfile.getGender());
+            profile.setReligion(updatedProfile.getReligion());
+            profile.setCaste(updatedProfile.getCaste());
+            profile.setSubCaste(updatedProfile.getSubCaste());
+            profile.setMaritalStatus(updatedProfile.getMaritalStatus());
+            profile.setHeightCm(updatedProfile.getHeightCm());
+            profile.setComplexion(updatedProfile.getComplexion());
+            profile.setBodyType(updatedProfile.getBodyType());
+            profile.setEducation(updatedProfile.getEducation());
+            profile.setOccupation(updatedProfile.getOccupation());
+            profile.setAnnualIncome(updatedProfile.getAnnualIncome());
+            profile.setCity(updatedProfile.getCity());
+            profile.setState(updatedProfile.getState());
+            profile.setCountry(updatedProfile.getCountry());
+            profile.setAboutMe(updatedProfile.getAboutMe());
+            profile.setPhotoUrl(updatedProfile.getPhotoUrl());
+            profile.setActive(updatedProfile.isActive()); // For boolean is/set
+            profile.setPreferredPartnerMinAge(updatedProfile.getPreferredPartnerMinAge());
+            profile.setPreferredPartnerMaxAge(updatedProfile.getPreferredPartnerMaxAge());
+            profile.setPreferredPartnerReligion(updatedProfile.getPreferredPartnerReligion());
+            profile.setPreferredPartnerCaste(updatedProfile.getPreferredPartnerCaste());
+            profile.setPreferredPartnerMinHeightCm(updatedProfile.getPreferredPartnerMinHeightCm());
+            profile.setPreferredPartnerMaxHeightCm(updatedProfile.getPreferredPartnerMaxHeightCm());
+
+            return profileRepository.save(profile);
+        }).orElseThrow(() -> new RuntimeException("Profile not found with id " + profileId));
+    }
+
+    // --- Delete Profile ---
+    public void deleteProfile(Long appUserId, Long profileId) {
+        Profile profile = profileRepository.findById(profileId)
+            .orElseThrow(() -> new RuntimeException("Profile not found with id " + profileId));
+
+        if (!profile.getAppUser().getId().equals(appUserId)) {
+            throw new RuntimeException("Unauthorized: Profile does not belong to this user.");
         }
-        profileRepository.deleteById(id);
+        profileRepository.delete(profile);
     }
 
-    // You can add more business logic methods here as needed,
-    // e.g., search, filter, match-making logic.
+    // --- Search Profiles ---
+    // Adjust this method signature and implementation to use the new Profile fields
+    // The controller's search call and this method's parameters must match.
+    public List<Profile> searchProfiles(
+        String gender,
+        String religion,
+        String caste,
+        Integer minAge,
+        Integer maxAge,
+        Double minHeightCm, // Use heightCm
+        Double maxHeightCm, // Use heightCm
+        String maritalStatus, // Add maritalStatus if needed in search
+        String education,
+        String occupation,
+        String city,
+        String state,
+        String country
+    ) {
+        // Implement your search logic here using profileRepository.findBySearchCriteria
+        // Make sure findBySearchCriteria exists in ProfileRepository with this exact signature
+        return profileRepository.findBySearchCriteria(
+            gender, religion, caste, minAge, maxAge,
+            minHeightCm, maxHeightCm, maritalStatus,
+            education, occupation, city, state, country
+        );
+    }
 }

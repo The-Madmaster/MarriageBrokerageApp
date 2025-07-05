@@ -1,13 +1,13 @@
+// src/main/java/com/marriagebureau/usermanagement/controller/AuthController.java
 package com.marriagebureau.usermanagement.controller;
 
-import com.marriagebureau.security.JwtTokenProvider;
-import com.marriagebureau.security.payload.JwtAuthResponse;
-import com.marriagebureau.security.payload.LoginDto;
+import com.marriagebureau.usermanagement.dto.LoginRequest;
+import com.marriagebureau.usermanagement.dto.RegisterRequest;
+import com.marriagebureau.usermanagement.dto.AuthResponse;
+import com.marriagebureau.usermanagement.service.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,34 +17,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthService authService;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
-    /**
-     * Handles user login and generates a JWT.
-     * POST /api/auth/login
-     * @param loginDto The DTO containing username and password.
-     * @return ResponseEntity with JwtAuthResponse containing the JWT token.
-     */
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+        // Corrected: Calls authService.register() as per AuthService's method name
+        AuthResponse response = authService.register(registerRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthResponse> authenticateUser(@RequestBody LoginDto loginDto) {
-        // Authenticate the user using Spring Security's AuthenticationManager
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
-        );
-
-        // Set the authenticated user in Spring Security context
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // Generate JWT token for the authenticated user
-        String token = jwtTokenProvider.generateToken(authentication);
-
-        // Return the token in a response DTO
-        return ResponseEntity.ok(new JwtAuthResponse(token));
+    public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+        AuthResponse response = authService.authenticateUser(loginRequest);
+        return ResponseEntity.ok(response);
     }
 }

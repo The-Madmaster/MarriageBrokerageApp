@@ -4,66 +4,77 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.lang.NonNull; // Ensure this import is resolvable if you intend to use @NonNull
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UserDetailsService; // Use the interface
+
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.springframework.util.StringUtils; // For StringUtils.hasText()
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService; // This will be CustomUserDetailsService
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.userDetailsService = userDetailsService;
-    }
+    // We're injecting UserDetailsService here.
+    // @Lazy is typically used to break circular dependencies.
+    // Ensure your CustomUserDetailsService is correctly configured as a @Service
+    private final UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        // Get JWT (token) from http request
+        String token = getJwtFromRequest(request); // Reusing existing helper for clarity
 
-        // 1. Get JWT token from HTTP request
-        String token = getTokenFromRequest(request);
+        // Validate token and ensure userEmail is extracted
+        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) { // Using validateToken from JwtTokenProvider
+            // Get email from token using the correct method name
+            String userEmail = jwtTokenProvider.getUserEmailFromJWT(token); // Using getUserEmailFromJWT
 
-        // 2. Validate token
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            // 3. Get username from token
-            String username = jwtTokenProvider.getUsername(token);
+            // If userEmail is found and no authentication is currently set in the context
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // Load user details using UserDetailsService
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-            // 4. Load user associated with token
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                // Check if the token is valid for the loaded user (this check is often integrated into validateToken already)
+                // The validateToken method already checks expiration etc. So a simple boolean check is enough.
+                // However, if your isTokenValid method from original design also takes UserDetails, then use that.
+                // For now, let's stick to the simple validateToken(token) and load user later.
+                // If you want more granular checks (e.g., specific user details match claims), you'd expand this.
 
-            // 5. Create Authentication object
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null, // No credentials (password) needed after token validation
-                    userDetails.getAuthorities()
-            );
+                // If token is valid, create an authentication object and set it in the SecurityContext
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null, // credentials are null because the token itself is the credential here
+                        userDetails.getAuthorities()
+                );
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            // 6. Set Spring Security authentication
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                // Set Spring Security Context
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
-
-        // Continue with the filter chain (e.g., to the next filter or the dispatcher servlet)
         filterChain.doFilter(request, response);
     }
 
-    private String getTokenFromRequest(HttpServletRequest request) {
+    // Helper method to extract JWT from Authorization header
+    private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        // Check if Authorization header is present and starts with "Bearer "
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Extract the token string (after "Bearer ")
+            return bearerToken.substring(7); // Extract token string after "Bearer "
         }
         return null;
     }
