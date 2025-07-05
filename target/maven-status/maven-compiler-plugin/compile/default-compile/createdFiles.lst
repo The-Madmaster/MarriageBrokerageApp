@@ -15,6 +15,7 @@ com/marriagebureau/user/User$UserBuilder.class
 com/marriagebureau/usermanagement/controller/AppUserController.class
 com/marriagebureau/security/payload/JwtAuthResponse.class
 com/marriagebureau/user/User.class
+com/marriagebureau/security/PasswordGenerator.class
 com/marriagebureau/usermanagement/dto/AuthRequest.class
 com/marriagebureau/usermanagement/dto/LoginRequest.class
 com/marriagebureau/usermanagement/service/BiodataPdfService.class

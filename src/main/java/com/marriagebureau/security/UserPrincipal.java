@@ -1,4 +1,3 @@
-// src/main/java/com/marriagebureau/security/UserPrincipal.java
 package com.marriagebureau.security;
 
 import com.marriagebureau.usermanagement.entity.AppUser;
@@ -7,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List; // Import List
+import java.util.stream.Collectors; // Import Collectors for Stream API
 
 // This class might become redundant if AppUser directly implements UserDetails
 // But if you still need it for some reason, here's the fix.
@@ -26,7 +26,10 @@ public class UserPrincipal implements UserDetails {
 
     public static UserPrincipal create(AppUser appUser) {
         // AppUser's getAuthorities method should return the list of authorities
-        List<GrantedAuthority> authorities = (List<GrantedAuthority>) appUser.getAuthorities();
+        // Fix for unchecked cast: Safely convert the collection to a List using streams
+        List<GrantedAuthority> authorities = appUser.getAuthorities().stream()
+                                                    .map(authority -> (GrantedAuthority) authority) // Ensures the elements are GrantedAuthority
+                                                    .collect(Collectors.toList()); // Collects them into a new List
 
         return new UserPrincipal(
                 appUser.getId(),
