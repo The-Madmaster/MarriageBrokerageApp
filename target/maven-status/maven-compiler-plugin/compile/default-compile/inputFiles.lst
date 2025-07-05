@@ -1,4 +1,5 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/MarriageBureauSoftwareApplication.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/web/ProtectedController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/UserPrincipal.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/UserRole.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/MaritalStatus.java
@@ -13,6 +14,7 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/PasswordGenerator.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/AppUserService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/payload/JwtAuthResponse.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/UserProfileController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/JwtAuthenticationEntryPoint.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/entity/AppUser.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/config/ApplicationConfig.java

@@ -1,126 +1,100 @@
 package com.marriagebureau.security;
 
 import com.marriagebureau.usermanagement.entity.AppUser;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.security.Key;
 import java.util.Date;
-import java.util.function.Function; // Crucial: This import was missing or not used.
 
 @Component
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    @Value("${app.jwtSecret}")
+    @Value("${app.jwt-secret}") // Get secret from application.properties
     private String jwtSecret;
 
-    @Value("${app.jwtExpirationMs}")
-    private int jwtExpirationMs;
+    @Value("${app.jwt-expiration-milliseconds}") // Get expiration from application.properties
+    private long jwtExpirationDate;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+    // Helper method to get the signing key.
+    // It's crucial to generate the key once and reuse it across operations.
+    private Key key() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
+    // Method to generate token
     public String generateToken(Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        AppUser userPrincipal = (AppUser) authentication.getPrincipal(); // Cast to your AppUser
 
-        Long userId = null;
-        if (userPrincipal instanceof AppUser) {
-            userId = ((AppUser) userPrincipal).getId();
-        } else if (userPrincipal instanceof UserPrincipal) {
-            userId = ((UserPrincipal) userPrincipal).getId();
-        }
+        String userEmail = userPrincipal.getEmail(); // Subject of the token
+        Long userId = userPrincipal.getId(); // Custom claim for userId
 
-        return Jwts.builder()
-                .subject((userPrincipal.getUsername()))
-                .claim("userId", userId)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(getSigningKey())
+        Date currentDate = new Date();
+        Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
+
+        String token = Jwts.builder()
+                .subject(userEmail) // Using modern fluent API: .subject() instead of .setSubject()
+                .claim("userId", userId) // Add userId as a custom claim
+                .issuedAt(currentDate) // Using modern fluent API: .issuedAt() instead of .setIssuedAt()
+                .expiration(expireDate) // Using modern fluent API: .expiration() instead of .setExpiration()
+                .signWith(key()) // Using modern fluent API: .signWith(Key) directly, HS384 inferred
                 .compact();
+        return token;
     }
 
-    // --- START: REQUIRED METHODS FOR JWT AUTHENTICATION FILTER ---
-
-    // This method extracts the username (subject) from the token.
-    // It replaces getUsernameFromToken.
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    // Helper method to extract any claim using a resolver function.
-    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    // Helper method to parse and extract all claims from the token.
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
+    // Extracts the user email (subject) from the JWT token.
+    public String getUserEmailFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getSubject();
     }
 
-    // Helper method to extract the expiration date.
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    // Helper method to check if the token is expired.
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    // This method validates the token against UserDetails and its expiration.
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-
-    // --- END: REQUIRED METHODS FOR JWT AUTHENTICATION FILTER ---
-
-
-    public Long getUserIdFromToken(String token) {
+    // Validates the JWT token.
+    public boolean validateToken(String token) {
         try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(getSigningKey())
+            Jwts.parserBuilder()
+                    .setSigningKey(key())
                     .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            return claims.get("userId", Long.class);
-        } catch (Exception e) {
-            logger.error("Could not get user ID from token: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    // The existing validateToken method, which is a general token validation,
-    // not the specific one used by the filter to check against UserDetails.
-    public boolean validateToken(String authToken) {
-        try {
-            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(authToken);
+                    .parseClaimsJws(token);
             return true;
+        } catch (SignatureException ex) {
+            logger.error("Invalid JWT signature: {}", ex.getMessage());
         } catch (MalformedJwtException ex) {
             logger.error("Invalid JWT token: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
-                logger.error("Expired JWT token: {}", ex.getMessage());
+            logger.error("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
             logger.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
             logger.error("JWT claims string is empty: {}", ex.getMessage());
         }
         return false;
+    }
+
+    public Long getUserIdFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        // Claims.get() returns an Object. If it's a number, it's typically Integer or Long.
+        // It's safer to cast to Number and then call longValue() to avoid ClassCastException.
+        return ((Number) claims.get("userId")).longValue();
     }
 }

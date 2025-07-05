@@ -13,7 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // Keep for specific matches
 
 @Configuration
 @EnableWebSecurity
@@ -21,9 +21,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; // Inject the filter
 
-    public SecurityConfig(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
+    public SecurityConfig(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter; // Initialize the filter
     }
 
     @Bean
@@ -37,10 +39,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter
-    ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -48,20 +47,23 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                // ADD THESE LINES to permit favicon and other static content
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/favicon.ico")).permitAll()
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/")).permitAll() // Allow root path if serving index.html
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/index.html")).permitAll() // If you have an index.html
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/static/**")).permitAll() // Common for static assets
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/css/**")).permitAll()
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/js/**")).permitAll()
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/images/**")).permitAll()
-                .anyRequest().authenticated() // All other requests require authentication
+                // Permit common static assets if serving a frontend
+                // This single line covers /favicon.ico, /index.html, and anything under /static/
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher("/favicon.ico"),
+                    AntPathRequestMatcher.antMatcher("/"), // Allow root path
+                    AntPathRequestMatcher.antMatcher("/index.html"),
+                    AntPathRequestMatcher.antMatcher("/static/**"),
+                    AntPathRequestMatcher.antMatcher("/css/**"),
+                    AntPathRequestMatcher.antMatcher("/js/**"),
+                    AntPathRequestMatcher.antMatcher("/images/**")
+                ).permitAll()
+                .anyRequest().authenticated()
             );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // This is crucial for the H2 Console to display correctly, as it uses frames.
+        // Crucial for the H2 Console to display correctly, as it uses frames.
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
