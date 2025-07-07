@@ -1,14 +1,17 @@
-// src/main/java/com/marriagebureau/security/JwtAuthenticationEntryPoint.java
 package com.marriagebureau.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper; // Import ObjectMapper
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType; // Import MediaType
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
@@ -17,8 +20,20 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
-        // This is invoked when a user tries to access a secured REST resource without supplying any credentials
-        // We should just send a 401 Unauthorized response because there is no 'login page' to redirect to
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: " + authException.getMessage());
+        // Set the response content type to JSON
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        // Set the HTTP status to 401 Unauthorized
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+        // Create a map to hold the error details
+        final Map<String, Object> body = new HashMap<>();
+        body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
+        body.put("error", "Unauthorized");
+        body.put("message", authException.getMessage()); // Get the exception message
+        body.put("path", request.getServletPath()); // Get the request path
+
+        // Use ObjectMapper to write the map as JSON to the response output stream
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(response.getOutputStream(), body);
     }
 }

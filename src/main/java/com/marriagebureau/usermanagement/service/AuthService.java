@@ -16,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime; // Keep this import, though not directly used for setting now() here
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -36,12 +36,8 @@ public class AuthService {
         AppUser user = AppUser.builder()
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
-                // Removed .username() as it no longer exists in AppUser
-                // Removed .enabled(), .createdDate(), .lastUpdatedDate(), .role()
-                // because AppUser now uses @Builder.Default for these fields.
-                // If registerRequest has contactNumber, ensure it's provided.
                 .contactNumber(registerRequest.getContactNumber())
-                .build(); // Let AppUser's @Builder.Default handle the other fields
+                .build();
 
         appUserRepository.save(user);
 
@@ -50,9 +46,9 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // Make sure AuthResponse has a constructor like AuthResponse(String accessToken, Long userId, String username, String email)
-        // Note: user.getUsername() will now return the email, as per AppUser's getUsername() implementation.
-        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail());
+        // FIX: Add the 'role' as the fifth argument.
+        // Assuming user.getRole() returns an enum like AppUser.Role, convert it to String.
+        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
     }
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
@@ -61,12 +57,14 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        // Cast to AppUser as it is your custom UserDetails implementation
         AppUser authenticatedUser = (AppUser) authentication.getPrincipal();
 
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // Make sure AuthResponse has a constructor like AuthResponse(String accessToken, Long userId, String username, String email)
-        return new AuthResponse(token, authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getEmail());
+        // FIX: Add the 'role' as the fifth argument.
+        // Assuming authenticatedUser.getRole() returns an enum like AppUser.Role, convert it to String.
+        return new AuthResponse(token, authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getEmail(), authenticatedUser.getRole().name());
     }
 
     public AuthResponse registerAdmin(RegisterRequest registerRequest) {
@@ -77,11 +75,9 @@ public class AuthService {
         AppUser admin = AppUser.builder()
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
-                // Removed .username()
-                // Removed .enabled(), .createdDate(), .lastUpdatedDate()
                 .contactNumber(registerRequest.getContactNumber())
                 .role(AppUser.Role.ROLE_ADMIN) // Explicitly set admin role
-                .build(); // Let AppUser's @Builder.Default handle other fields
+                .build();
 
         appUserRepository.save(admin);
 
@@ -90,7 +86,8 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // Make sure AuthResponse has a constructor like AuthResponse(String accessToken, Long userId, String username, String email)
-        return new AuthResponse(token, admin.getId(), admin.getUsername(), admin.getEmail());
+        // FIX: Add the 'role' as the fifth argument.
+        // Assuming admin.getRole() returns an enum like AppUser.Role, convert it to String.
+        return new AuthResponse(token, admin.getId(), admin.getUsername(), admin.getEmail(), admin.getRole().name());
     }
 }

@@ -115,7 +115,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE_URL = 'http://localhost:8080/api'; // Ensure this matches your Spring Boot app's port
+            // **CRITICAL FIX: Update API_BASE_URL to your Codespace backend URL**
+            const API_BASE_URL = 'https://vigilant-space-waffle-vjrjxr4962w5r5-8080.app.github.dev/api';
+            
             const loginForm = document.getElementById('loginForm');
             const messageBox = document.getElementById('message');
             const protectedDataDisplay = document.getElementById('protectedDataDisplay');
@@ -158,7 +160,7 @@
             /**
              * Removes all authentication info from localStorage (logout).
              */
-            function logout() {
+            window.logout = function() { // Made global directly
                 localStorage.removeItem('jwtToken');
                 localStorage.removeItem('userId');
                 localStorage.removeItem('username');
@@ -166,7 +168,7 @@
                 console.log('Authentication Info Removed. User logged out.');
                 showMessage('You have been logged out.', 'success');
                 protectedDataDisplay.textContent = 'No protected data fetched yet.';
-            }
+            };
 
             // --- Event Listeners ---
 
@@ -209,7 +211,7 @@
             /**
              * Sending the Token with Requests: Includes the JWT in the Authorization header.
              */
-            window.getProtectedData = async () => { // Make it global for onclick
+            window.getProtectedData = async () => { // Made global directly
                 clearMessages(); // Clear previous messages
                 const token = getStoredToken();
 
@@ -230,8 +232,8 @@
                     // Parse text for simple response, or json() for JSON response
                     const contentType = response.headers.get("content-type");
                     const data = contentType && contentType.includes("application/json")
-                               ? await response.json()
-                               : await response.text();
+                                 ? await response.json()
+                                 : await response.text();
 
                     if (response.ok) {
                         protectedDataDisplay.textContent = `Protected Data: ${JSON.stringify(data, null, 2)}`;
@@ -248,8 +250,6 @@
                     protectedDataDisplay.textContent = `Error: ${error.message}`;
                 }
             };
-
-            window.logout = logout; // Make logout global for onclick
         });
     </script>
 </body>

@@ -5,6 +5,7 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/MaritalStatus.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/AuthController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/entity/Gender.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/config/WebConfig.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/payload/LoginDto.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/service/AuthService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/RegisterRequest.java

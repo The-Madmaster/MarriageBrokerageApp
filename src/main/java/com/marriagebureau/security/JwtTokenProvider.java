@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey; // This is the correct import for SecretKey
 import java.util.Date;
 
 @Component
@@ -31,7 +31,7 @@ public class JwtTokenProvider {
 
     // Helper method to get the signing key.
     // It's crucial to generate the key once and reuse it across operations.
-    private Key key() {
+    private SecretKey key() { // **Changed return type from 'Key' to 'SecretKey'**
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
@@ -57,21 +57,21 @@ public class JwtTokenProvider {
 
     // Extracts the user email (subject) from the JWT token.
     public String getUserEmailFromJWT(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key())
+        Claims claims = Jwts.parser() // Correct: use Jwts.parser() for modern API
+                .verifyWith(key())   // Correct: use verifyWith() instead of setSigningKey()
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token) // Correct: use parseSignedClaims()
+                .getPayload(); // Get the payload to access claims
         return claims.getSubject();
     }
 
     // Validates the JWT token.
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key())
+            Jwts.parser() // Correct: use Jwts.parser() for modern API
+                    .verifyWith(key()) // Correct: use verifyWith() instead of setSigningKey()
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token); // Correct: use parseSignedClaims()
             return true;
         } catch (SignatureException ex) {
             logger.error("Invalid JWT signature: {}", ex.getMessage());
@@ -87,14 +87,13 @@ public class JwtTokenProvider {
         return false;
     }
 
+    // Extracts userId from JWT.
     public Long getUserIdFromJWT(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key())
+        Claims claims = Jwts.parser() // Correct: use Jwts.parser() for modern API
+                .verifyWith(key())   // Correct: use verifyWith() instead of setSigningKey()
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
-        // Claims.get() returns an Object. If it's a number, it's typically Integer or Long.
-        // It's safer to cast to Number and then call longValue() to avoid ClassCastException.
+                .parseSignedClaims(token) // Correct: use parseSignedClaims()
+                .getPayload(); // Get the payload to access claims
         return ((Number) claims.get("userId")).longValue();
     }
 }
