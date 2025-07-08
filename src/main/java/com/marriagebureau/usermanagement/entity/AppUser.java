@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections; // Make sure to import this
 
+// Make sure Profile is correctly imported, which it is.
+import com.marriagebureau.usermanagement.entity.Profile;
+
 @Data
 @Builder // Lombok's builder pattern
 @NoArgsConstructor // Required for JPA
@@ -32,10 +35,6 @@ public class AppUser implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    // Removed the separate 'username' field to avoid redundancy,
-    // as 'email' will serve as the username for Spring Security.
-    // If you need a display name, you can add a 'displayName' field.
-
     private String contactNumber;
 
     // Use @Builder.Default to ensure these are set when using AppUser.builder().build()
@@ -54,6 +53,11 @@ public class AppUser implements UserDetails {
     @Builder.Default
     @Column(name = "last_updated_date", nullable = false)
     private LocalDateTime lastUpdatedDate = LocalDateTime.now(); // Initialize for direct new AppUser() or @Builder.Default
+
+    // THIS IS THE CRUCIAL CHANGE:
+    // mappedBy must match the field name in the Profile entity that references AppUser, which is 'appUser'.
+    @OneToOne(mappedBy = "appUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private Profile profile;
 
 
     // Enum for roles (create this if you haven't)

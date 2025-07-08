@@ -1,6 +1,5 @@
 com/marriagebureau/usermanagement/dto/AuthResponse.class
 com/marriagebureau/usermanagement/controller/UserProfileController.class
-com/marriagebureau/usermanagement/controller/ProfileController.class
 com/marriagebureau/usermanagement/entity/AppUser$AppUserBuilder.class
 com/marriagebureau/config/WebConfig.class
 com/marriagebureau/security/UserPrincipal.class
@@ -11,7 +10,6 @@ com/marriagebureau/usermanagement/controller/AuthController.class
 com/marriagebureau/entity/UserRole.class
 com/marriagebureau/usermanagement/entity/AppUser$Role.class
 com/marriagebureau/entity/MaritalStatus.class
-com/marriagebureau/usermanagement/service/ProfileService.class
 com/marriagebureau/usermanagement/repository/AppUserRepository.class
 com/marriagebureau/security/CustomUserDetailsService.class
 com/marriagebureau/security/payload/ProfileSearchDto.class
@@ -24,9 +22,10 @@ com/marriagebureau/usermanagement/dto/AuthRequest.class
 com/marriagebureau/usermanagement/dto/LoginRequest.class
 com/marriagebureau/usermanagement/service/BiodataPdfService.class
 com/marriagebureau/usermanagement/entity/Profile.class
-com/marriagebureau/usermanagement/repository/ProfileRepository.class
+com/marriagebureau/profile/repository/ProfileRepository.class
 com/marriagebureau/usermanagement/service/AppUserService.class
 com/marriagebureau/config/ApplicationConfig.class
+com/marriagebureau/profile/service/ProfileService.class
 com/marriagebureau/security/JwtTokenProvider.class
 com/marriagebureau/security/SecurityService.class
 com/marriagebureau/security/JwtAuthenticationFilter.class
@@ -34,6 +33,7 @@ com/marriagebureau/MarriageBureauSoftwareApplication.class
 com/marriagebureau/ActiveProfiles.class
 com/marriagebureau/web/ProtectedController.class
 com/marriagebureau/security/payload/LoginDto.class
+com/marriagebureau/profile/controller/ProfileController.class
 com/marriagebureau/security/JwtAuthenticationEntryPoint.class
 com/marriagebureau/entity/Gender.class
 com/marriagebureau/usermanagement/entity/AppUser.class
