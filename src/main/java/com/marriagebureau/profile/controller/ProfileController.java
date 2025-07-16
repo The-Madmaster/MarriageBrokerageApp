@@ -1,104 +1,109 @@
+// src/main/java/com/marriagebureau/profile/controller/ProfileController.java
+
 package com.marriagebureau.profile.controller;
 
 import com.marriagebureau.usermanagement.entity.Profile;
 import com.marriagebureau.profile.service.ProfileService;
-import com.marriagebureau.usermanagement.entity.AppUser;
-import com.marriagebureau.usermanagement.repository.AppUserRepository;
+import jakarta.validation.Valid; // For @Valid annotation
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.Authentication; // Import Authentication
+import org.springframework.security.core.userdetails.UserDetails; // Import UserDetails
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Optional;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/profiles")
 public class ProfileController {
 
     private final ProfileService profileService;
-    private final AppUserRepository appUserRepository; // To get the user ID from the authenticated user
 
-    public ProfileController(ProfileService profileService, AppUserRepository appUserRepository) {
+    @Autowired
+    public ProfileController(ProfileService profileService) {
         this.profileService = profileService;
-        this.appUserRepository = appUserRepository;
     }
 
-    // Helper to get current authenticated user's ID
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() == "anonymousUser") {
-            throw new IllegalStateException("User is not authenticated.");
+    /**
+     * Creates a new user profile.
+     * Accessible to ROLE_USER (for creating their own profile after registration)
+     * and ROLE_ADMIN.
+     *
+     * The appUserId path variable should match the authenticated user's ID
+     * or be managed by an admin.
+     * This example assumes the appUserId in the URL is for the user being associated.
+     * In a real app, a user would create their OWN profile,
+     * so appUserId might come from Authentication or be omitted.
+     */
+    @PostMapping("/{appUserId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #appUserId == authentication.principal.id)")
+    public ResponseEntity<Profile> createProfile(@PathVariable Long appUserId, @Valid @RequestBody Profile profile) {
+        try {
+            Profile createdProfile = profileService.createProfile(profile, appUserId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdProfile);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        } catch (Exception e) {
+            // General catch-all for other unexpected errors
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating profile: " + e.getMessage(), e);
         }
-        String userEmail = ((UserDetails) authentication.getPrincipal()).getUsername();
-        AppUser currentUser = appUserRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("Authenticated user not found in database: " + userEmail));
-        return currentUser.getId();
     }
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')") // Only authenticated users can create their profile
-    public ResponseEntity<Profile> createProfileForCurrentUser(@Valid @RequestBody Profile profile) {
-        Long currentUserId = getCurrentUserId();
-        Profile createdProfile = profileService.createProfile(currentUserId, profile);
-        return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
-    }
 
-    @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')") // Users can view their own profile
-    public ResponseEntity<Profile> getMyProfile() {
-        Long currentUserId = getCurrentUserId();
-        return profileService.getProfileByUserId(currentUserId)
+    /**
+     * Retrieves a user profile by profile ID.
+     * Accessible to ROLE_ADMIN (any profile)
+     * or ROLE_USER (only their own profile based on appUser.id).
+     */
+    @GetMapping("/{profileId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and @profileService.getProfileById(#profileId).orElse(new com.marriagebureau.usermanagement.entity.Profile()).getAppUser().getId() == authentication.principal.id)")
+    public ResponseEntity<Profile> getProfileById(@PathVariable Long profileId, Authentication authentication) {
+        // Note: The @PreAuthorize handles the authorization logic.
+        // We just need to fetch the profile here.
+
+        return profileService.getProfileById(profileId)
                 .map(ResponseEntity::ok)
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @profileService.getProfileById(#id).isPresent() and @profileService.getProfileById(#id).get().getUser().getId() == authentication.principal.id)")
-    // Admin can view any profile. A user can view their own profile by its ID.
-    // NOTE: For a real dating app, you'd allow users to view other users' profiles, but we're starting with basics.
-    public ResponseEntity<Profile> getProfileById(@PathVariable Long id) {
-        Optional<Profile> profile = profileService.getProfileById(id);
-        return profile.map(ResponseEntity::ok)
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @PutMapping("/my")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')") // Authenticated users can update their own profile
-    public ResponseEntity<Profile> updateMyProfile(@Valid @RequestBody Profile profile) {
-        Long currentUserId = getCurrentUserId();
-        Profile existingProfile = profileService.getProfileByUserId(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found for current user. Create one first."));
-        
-        // Ensure the ID of the profile to update matches the existing profile's ID
-        // This prevents users from trying to update other profiles if they somehow get the ID
-        return ResponseEntity.ok(profileService.updateProfile(existingProfile.getId(), profile));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found with ID: " + profileId));
     }
 
 
-    @DeleteMapping("/my")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')") // Authenticated users can delete their own profile
-    public ResponseEntity<Void> deleteMyProfile() {
-        Long currentUserId = getCurrentUserId();
-        Profile existingProfile = profileService.getProfileByUserId(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found for current user."));
-        profileService.deleteProfile(existingProfile.getId());
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    /**
+     * Retrieves a user profile by AppUser ID.
+     * This is useful if you authenticate a user and then want to find THEIR profile.
+     * Accessible to ROLE_ADMIN (any profile by appUser ID)
+     * or ROLE_USER (only their own profile using their authenticated ID).
+     */
+    @GetMapping("/user/{appUserId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #appUserId == authentication.principal.id)")
+    public ResponseEntity<Profile> getProfileByAppUserId(@PathVariable Long appUserId) {
+        return profileService.getProfileByAppUserId(appUserId)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found for AppUser ID: " + appUserId));
     }
 
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')") // Only admins can list all profiles
-    public ResponseEntity<List<Profile>> getAllProfiles() {
-        return ResponseEntity.ok(profileService.getAllProfiles()); // Need to add this method in service
+
+    /**
+     * Updates an existing user profile by profile ID.
+     * Accessible to ROLE_ADMIN (any profile)
+     * or ROLE_USER (only their own profile).
+     */
+    @PutMapping("/{profileId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and @profileService.getProfileById(#profileId).orElse(new com.marriagebureau.usermanagement.entity.Profile()).getAppUser().getId() == authentication.principal.id)")
+    public ResponseEntity<Profile> updateProfile(@PathVariable Long profileId, @Valid @RequestBody Profile profile) {
+        Profile updatedProfile = profileService.updateProfile(profileId, profile);
+        return ResponseEntity.ok(updatedProfile);
     }
 
-    // Add this method to ProfileService
-    // public List<Profile> getAllProfiles() {
-    //     return profileRepository.findAll();
-    // }
+    /**
+     * Deletes a user profile by profile ID.
+     * Accessible to ROLE_ADMIN (any profile)
+     * or ROLE_USER (only their own profile).
+     */
+    @DeleteMapping("/{profileId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and @profileService.getProfileById(#profileId).orElse(new com.marriagebureau.usermanagement.entity.Profile()).getAppUser().getId() == authentication.principal.id)")
+    public ResponseEntity<Void> deleteProfile(@PathVariable Long profileId) {
+        profileService.deleteProfile(profileId);
+        return ResponseEntity.noContent().build();
+    }
 }

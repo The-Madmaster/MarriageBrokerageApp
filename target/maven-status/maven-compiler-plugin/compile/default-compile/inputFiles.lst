@@ -18,6 +18,7 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/UserProfileController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/JwtAuthenticationEntryPoint.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/entity/AppUser.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/exception/GlobalExceptionHandler.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/config/ApplicationConfig.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/SecurityService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/profile/controller/ProfileController.java
@@ -25,6 +26,7 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/JwtTokenProvider.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/controller/AppUserController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/profile/service/ProfileService.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/jwt/JwtService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/AuthRequest.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/dto/AuthResponse.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/ActiveProfiles.java
@@ -35,3 +37,4 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/usermanagement/repository/AppUserRepository.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/security/SecurityConfig.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/user/User.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/exception/ErrorResponse.java

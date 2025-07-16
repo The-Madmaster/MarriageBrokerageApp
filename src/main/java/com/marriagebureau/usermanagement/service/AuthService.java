@@ -37,6 +37,10 @@ public class AuthService {
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .contactNumber(registerRequest.getContactNumber())
+                .role(AppUser.Role.ROLE_USER) // Assign default role for registration
+                .createdDate(LocalDateTime.now())
+                .lastUpdatedDate(LocalDateTime.now())
+                .enabled(true)
                 .build();
 
         appUserRepository.save(user);
@@ -46,14 +50,25 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // FIX: Add the 'role' as the fifth argument.
-        // Assuming user.getRole() returns an enum like AppUser.Role, convert it to String.
-        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
+        // Corrected AuthResponse constructor call to include "Bearer" tokenType
+        return new AuthResponse(
+            token,
+            "Bearer", // tokenType
+            user.getId(),
+            user.getEmail(),
+            user.getRole().name()
+        );
     }
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            throw new RuntimeException("Invalid email or password", e);
+        }
+
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -62,9 +77,14 @@ public class AuthService {
 
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // FIX: Add the 'role' as the fifth argument.
-        // Assuming authenticatedUser.getRole() returns an enum like AppUser.Role, convert it to String.
-        return new AuthResponse(token, authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getEmail(), authenticatedUser.getRole().name());
+        // Corrected AuthResponse constructor call to include "Bearer" tokenType
+        return new AuthResponse(
+            token,
+            "Bearer", // tokenType
+            authenticatedUser.getId(),
+            authenticatedUser.getEmail(),
+            authenticatedUser.getRole().name()
+        );
     }
 
     public AuthResponse registerAdmin(RegisterRequest registerRequest) {
@@ -77,6 +97,9 @@ public class AuthService {
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .contactNumber(registerRequest.getContactNumber())
                 .role(AppUser.Role.ROLE_ADMIN) // Explicitly set admin role
+                .createdDate(LocalDateTime.now())
+                .lastUpdatedDate(LocalDateTime.now())
+                .enabled(true)
                 .build();
 
         appUserRepository.save(admin);
@@ -86,8 +109,13 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenProvider.generateToken(authentication);
 
-        // FIX: Add the 'role' as the fifth argument.
-        // Assuming admin.getRole() returns an enum like AppUser.Role, convert it to String.
-        return new AuthResponse(token, admin.getId(), admin.getUsername(), admin.getEmail(), admin.getRole().name());
+        // Corrected AuthResponse constructor call to include "Bearer" tokenType
+        return new AuthResponse(
+            token,
+            "Bearer", // tokenType
+            admin.getId(),
+            admin.getEmail(),
+            admin.getRole().name()
+        );
     }
 }
