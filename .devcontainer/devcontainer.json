@@ -23,3 +23,12 @@
   "postCreateCommand": "npm install -g npm@latest && ./mvnw clean install -DskipTests",
   "remoteUser": "vscode"
 }
+
+{
+  "name": "Node.js Development Environment",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  },
+  "postCreateCommand": "npm install" // Optional: run npm install on creation
+}

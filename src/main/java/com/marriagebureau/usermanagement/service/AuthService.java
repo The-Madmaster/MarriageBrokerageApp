@@ -16,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime; // Keep this import, though not directly used for setting now() here
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -36,23 +36,20 @@ public class AuthService {
         AppUser user = AppUser.builder()
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
-                // Removed .username() as it no longer exists in AppUser
-                // Removed .enabled(), .createdDate(), .lastUpdatedDate(), .role()
-                // because AppUser now uses @Builder.Default for these fields.
-                // If registerRequest has contactNumber, ensure it's provided.
                 .contactNumber(registerRequest.getContactNumber())
-                .build(); // Let AppUser's @Builder.Default handle the other fields
+                .build();
 
         appUserRepository.save(user);
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtTokenProvider.generateToken(authentication);
+        String accessToken = jwtTokenProvider.generateToken(authentication); // Renamed 'token' to 'accessToken'
 
-        // Make sure AuthResponse has a constructor like AuthResponse(String accessToken, Long userId, String username, String email)
-        // Note: user.getUsername() will now return the email, as per AppUser's getUsername() implementation.
-        return new AuthResponse(token, user.getId(), user.getUsername(), user.getEmail());
+        // Updated AuthResponse constructor call to match the new DTO structure (5 args)
+        // assuming AuthResponse uses @AllArgsConstructor for (accessToken, type, id, email, role)
+        // and 'type' has a default value "Bearer" or is explicitly passed.
+        return new AuthResponse(accessToken, "Bearer", user.getId(), user.getUsername(), user.getRole().name());
     }
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
@@ -63,10 +60,12 @@ public class AuthService {
 
         AppUser authenticatedUser = (AppUser) authentication.getPrincipal();
 
-        String token = jwtTokenProvider.generateToken(authentication);
+        String accessToken = jwtTokenProvider.generateToken(authentication); // Renamed 'token' to 'accessToken'
 
-        // Make sure AuthResponse has a constructor like AuthResponse(String accessToken, Long userId, String username, String email)
-        return new AuthResponse(token, authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getEmail());
+        // Updated AuthResponse constructor call to match the new DTO structure (5 args)
+        // assuming AuthResponse uses @AllArgsConstructor for (accessToken, type, id, email, role)
+        // and 'type' has a default value "Bearer" or is explicitly passed.
+        return new AuthResponse(accessToken, "Bearer", authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getRole().name());
     }
 
     public AuthResponse registerAdmin(RegisterRequest registerRequest) {
@@ -77,20 +76,20 @@ public class AuthService {
         AppUser admin = AppUser.builder()
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
-                // Removed .username()
-                // Removed .enabled(), .createdDate(), .lastUpdatedDate()
                 .contactNumber(registerRequest.getContactNumber())
                 .role(AppUser.Role.ROLE_ADMIN) // Explicitly set admin role
-                .build(); // Let AppUser's @Builder.Default handle other fields
+                .build();
 
         appUserRepository.save(admin);
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtTokenProvider.generateToken(authentication);
+        String accessToken = jwtTokenProvider.generateToken(authentication); // Renamed 'token' to 'accessToken'
 
-        // Make sure AuthResponse has a constructor like AuthResponse(String accessToken, Long userId, String username, String email)
-        return new AuthResponse(token, admin.getId(), admin.getUsername(), admin.getEmail());
+        // Updated AuthResponse constructor call to match the new DTO structure (5 args)
+        // assuming AuthResponse uses @AllArgsConstructor for (accessToken, type, id, email, role)
+        // and 'type' has a default value "Bearer" or is explicitly passed.
+        return new AuthResponse(accessToken, "Bearer", admin.getId(), admin.getUsername(), admin.getRole().name());
     }
 }

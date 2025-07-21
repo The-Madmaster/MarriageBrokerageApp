@@ -5,20 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data // Generates getters, setters, toString, equals, and hashCode
+@NoArgsConstructor // Generates a no-argument constructor
+@AllArgsConstructor // Generates a constructor with all fields
 public class AuthResponse {
-    private String token;
-    private String type = "Bearer";
+    private String accessToken; // Changed name from 'token' to 'accessToken'
+    private String type = "Bearer"; // Default value for the token type
     private Long id;
     private String email;
-    private String role; // Or a list of roles if applicable
-
-    public AuthResponse(String token, Long id, String email, String role) {
-        this.token = token;
-        this.id = id;
-        this.email = email;
-        this.role = role;
-    }
+    private String role; // Role of the authenticated user
 }

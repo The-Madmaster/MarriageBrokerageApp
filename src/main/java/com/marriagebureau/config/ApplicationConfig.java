@@ -2,25 +2,24 @@
 package com.marriagebureau.config;
 
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Import BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class ApplicationConfig {
 
     private final AppUserRepository appUserRepository;
-    private final PasswordEncoder passwordEncoder;
+    // No longer inject PasswordEncoder directly into the constructor here
 
-    @Autowired
-    public ApplicationConfig(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
+    // Constructor only takes AppUserRepository now
+    public ApplicationConfig(AppUserRepository appUserRepository) {
         this.appUserRepository = appUserRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Bean
@@ -29,11 +28,16 @@ public class ApplicationConfig {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
     }
 
+    @Bean // Define PasswordEncoder as a bean in ApplicationConfig
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder);
+        authProvider.setPasswordEncoder(passwordEncoder()); // Use the locally defined passwordEncoder bean
         return authProvider;
     }
 }

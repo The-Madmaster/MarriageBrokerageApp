@@ -1,4 +1,7 @@
 {
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.jdt.ls.java.home": "",
+    "spring-boot.ls.java.home": "",
+    "xml.java.home": ""
 }

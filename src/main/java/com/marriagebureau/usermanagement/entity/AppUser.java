@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Collections; // Make sure to import this
+import java.util.Collections; // Correctly imported
 
 @Data
 @Builder // Lombok's builder pattern
@@ -19,6 +19,7 @@ import java.util.Collections; // Make sure to import this
 @AllArgsConstructor // Required for @Builder to create a constructor with all fields
 @Entity
 @Table(name = "app_users") // Ensure table name is correct
+@EntityListeners(AppUserListener.class) // Added for automatic date updates (Requires AppUserListener class)
 public class AppUser implements UserDetails {
 
     @Id
@@ -32,10 +33,6 @@ public class AppUser implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    // Removed the separate 'username' field to avoid redundancy,
-    // as 'email' will serve as the username for Spring Security.
-    // If you need a display name, you can add a 'displayName' field.
-
     private String contactNumber;
 
     // Use @Builder.Default to ensure these are set when using AppUser.builder().build()
@@ -47,16 +44,20 @@ public class AppUser implements UserDetails {
     @Builder.Default // Default role for builder
     private Role role = Role.ROLE_USER; // Default to a basic user role
 
-    @Builder.Default
     @Column(name = "created_date", nullable = false, updatable = false)
-    private LocalDateTime createdDate = LocalDateTime.now(); // Initialize for direct new AppUser() or @Builder.Default
+    private LocalDateTime createdDate; // Removed @Builder.Default here, handled by listener
 
-    @Builder.Default
     @Column(name = "last_updated_date", nullable = false)
-    private LocalDateTime lastUpdatedDate = LocalDateTime.now(); // Initialize for direct new AppUser() or @Builder.Default
+    private LocalDateTime lastUpdatedDate; // Removed @Builder.Default here, handled by listener
 
+    // One-to-one relationship with Profile
+    // mappedBy indicates the owning side is in Profile (via appUser field)
+    // cascade = CascadeType.ALL: Operations on AppUser (e.g., delete) will cascade to Profile
+    // orphanRemoval = true: If a Profile is disassociated (set to null), it will be deleted
+    @OneToOne(mappedBy = "appUser", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Profile profile; // Link to the user's profile
 
-    // Enum for roles (create this if you haven't)
+    // Enum for roles
     public enum Role {
         ROLE_USER, // Basic user role
         ROLE_ADMIN // Administrator role
@@ -67,11 +68,8 @@ public class AppUser implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Return a collection containing the user's role as a SimpleGrantedAuthority
-        // The toString() of the Role enum will give "ROLE_USER" or "ROLE_ADMIN"
-        if (this.role != null) {
-            return Collections.singletonList(new SimpleGrantedAuthority(this.role.name()));
-        }
-        return Collections.emptyList(); // Return empty list if role is null (shouldn't happen with proper data)
+        // Using .name() explicitly for the string representation
+        return Collections.singletonList(new SimpleGrantedAuthority(this.role.name()));
     }
 
     @Override
@@ -105,4 +103,7 @@ public class AppUser implements UserDetails {
     public String getPassword() {
         return this.password;
     }
+
+    // --- Lifecycle Callbacks (Moved to AppUserListener for cleaner entity) ---
+    // If you prefer, these can be kept here with @PrePersist and @PreUpdate
 }

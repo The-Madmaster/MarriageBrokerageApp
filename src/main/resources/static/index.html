@@ -100,6 +100,10 @@
             <div>
                 <input type="password" id="password" name="password" placeholder="Password" value="adminpassword" required class="input-field">
             </div>
+            <div class="flex items-center mb-4">
+                <input type="checkbox" id="showPassword" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+                <label for="showPassword" class="ml-2 block text-sm text-gray-900">Show Password</label>
+            </div>
             <button type="submit" class="action-button">Sign in</button>
         </form>
 
@@ -115,10 +119,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE_URL = 'http://localhost:8080/api'; // Ensure this matches your Spring Boot app's port
+            const API_BASE_URL = 'https://reimagined-space-invention-r6xvpxq6qj42p75j-8080.app.github.dev/api'; // Adjust this to your actual API base URL
             const loginForm = document.getElementById('loginForm');
             const messageBox = document.getElementById('message');
             const protectedDataDisplay = document.getElementById('protectedDataDisplay');
+            const passwordInput = document.getElementById('password'); // Get the password input
+            const showPasswordCheckbox = document.getElementById('showPassword'); // Get the checkbox
 
             // --- Helper Functions ---
 
@@ -230,8 +236,8 @@
                     // Parse text for simple response, or json() for JSON response
                     const contentType = response.headers.get("content-type");
                     const data = contentType && contentType.includes("application/json")
-                               ? await response.json()
-                               : await response.text();
+                                 ? await response.json()
+                                 : await response.text();
 
                     if (response.ok) {
                         protectedDataDisplay.textContent = `Protected Data: ${JSON.stringify(data, null, 2)}`;
@@ -250,6 +256,17 @@
             };
 
             window.logout = logout; // Make logout global for onclick
+
+            // New Event Listener for Show Password
+            if (showPasswordCheckbox) {
+                showPasswordCheckbox.addEventListener('change', () => {
+                    if (showPasswordCheckbox.checked) {
+                        passwordInput.type = 'text'; // Change to text to show password
+                    } else {
+                        passwordInput.type = 'password'; // Change back to password to hide
+                    }
+                });
+            }
         });
     </script>
 </body>

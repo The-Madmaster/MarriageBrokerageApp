@@ -9,11 +9,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // No longer needed here
+import org.springframework.security.crypto.password.PasswordEncoder; // Still needed for AuthenticationManager parameter, but not for defining the bean
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // Keep for specific matches
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -21,17 +21,20 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // K
 public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter; // Inject the filter
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfig(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter; // Initialize the filter
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    // REMOVE THIS BEAN DEFINITION - PasswordEncoder will now be provided by ApplicationConfig
+    /*
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+    */
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -47,11 +50,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                // Permit common static assets if serving a frontend
-                // This single line covers /favicon.ico, /index.html, and anything under /static/
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher("/favicon.ico"),
-                    AntPathRequestMatcher.antMatcher("/"), // Allow root path
+                    AntPathRequestMatcher.antMatcher("/"),
                     AntPathRequestMatcher.antMatcher("/index.html"),
                     AntPathRequestMatcher.antMatcher("/static/**"),
                     AntPathRequestMatcher.antMatcher("/css/**"),
@@ -63,7 +64,6 @@ public class SecurityConfig {
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // Crucial for the H2 Console to display correctly, as it uses frames.
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
