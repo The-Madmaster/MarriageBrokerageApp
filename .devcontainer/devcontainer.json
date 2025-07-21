@@ -27,12 +27,13 @@
                 "vscjava.vscode-maven"
             ],
             "settings": {
-                // 👇 CRUCIAL CHANGE HERE: Updated to the recommended setting
-                "java.jdt.ls.java.home": "/usr/lib/jvm/java-21-openjdk-amd64",
+                // 👇 UPDATE THIS PATH with the actual path you found!
+                "java.jdt.ls.java.home": "/path/to/your/java-21-installation",
                 "java.configuration.runtimes": [
                     {
                         "name": "JavaSE-21",
-                        "path": "/usr/lib/jvm/java-21-openjdk-amd64",
+                        // 👇 UPDATE THIS PATH as well!
+                        "path": "/path/to/your/java-21-installation",
                         "default": true
                     }
                 ]
@@ -40,6 +41,8 @@
         }
     },
     "forwardPorts": [8080, 3000],
-    "postCreateCommand": "sudo update-alternatives --set java $(sudo update-alternatives --list java | grep 'java-21-openjdk' | cut -d' ' -f1) && sudo update-alternatives --set javac $(sudo update-alternatives --list javac | grep 'java-21-openjdk' | cut -d' ' -f1) && export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 && echo 'export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64' >> ~/.bashrc && echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc && npm install -g npm@latest && ./mvnw clean install -DskipTests && npm install --prefix marriage-bureau-frontend || true",
+    // You should remove or adjust the postCreateCommand if the 'update-alternatives' and export commands
+    // are trying to set a path that doesn't exist. It's often better to rely on the feature for JAVA_HOME.
+    "postCreateCommand": "npm install -g npm@latest && ./mvnw clean install -DskipTests && npm install --prefix marriage-bureau-frontend || true",
     "remoteUser": "codespace"
 }
