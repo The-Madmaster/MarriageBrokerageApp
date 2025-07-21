@@ -2,44 +2,28 @@
   "name": "Full-Stack (Spring Boot & React) Development Environment",
   "image": "mcr.microsoft.com/devcontainers/universal:latest",
   "features": {
-    // Java setup for Spring Boot
     "ghcr.io/devcontainers/features/java:1": {
-      "version": "17" // Use Java 17, as per your Spring Boot config. If your Spring Boot needs 21, change this to "21".
+      "version": "17"
     },
-    // Node.js setup for React
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "20" // Use Node.js 20. If you prefer 22, change this to "22".
-    },
-    // Optional: Docker-in-Docker if you plan to run Docker containers *inside* the codespace (e.g., for a database)
-    // If you're just running Spring Boot directly and connecting to a service outside the codespace, you might not need this.
-    // "ghcr.io/devcontainers/features/docker-in-docker:2": {
-    //   "version": "latest"
-    // }
+      "version": "20"
+    }
   },
   "customizations": {
     "vscode": {
       "extensions": [
-        // Java & Spring Boot Extensions
         "vscjava.vscode-java-pack",
-        "Pivotal.vscode-boot-dashboard", // Good for managing Spring Boot apps
+        "Pivotal.vscode-boot-dashboard",
         "redhat.vscode-xml",
         "vmware.vscode-spring-boot",
-        "Pivotal.vscode-boot-devtools", // Useful for Spring Boot development
-        "vmware.vscode-boot-language-support", // Enhanced language support
-
-        // React & Node.js Extensions
-        "ms-vscode.vscode-typescript-react-extension", // Essential for React development
-        "dbaeumer.vscode-eslint" // For code quality and consistency
-        // Add more React/JS extensions as you see fit (e.g., Prettier, testing extensions)
+        "Pivotal.vscode-boot-devtools",
+        "vmware.vscode-boot-language-support",
+        "ms-vscode.vscode-typescript-react-extension",
+        "dbaeumer.vscode-eslint"
       ]
     }
   },
-  // Forward ports: 8080 for Spring Boot, 3000 for React dev server
   "forwardPorts": [8080, 3000],
-
-  // Commands to run after the Codespace is created
   "postCreateCommand": "npm install -g npm@latest && ./mvnw clean install -DskipTests && npm install --prefix marriage-bureau-frontend || true",
-  
-  // Set the remote user
   "remoteUser": "vscode"
 }
