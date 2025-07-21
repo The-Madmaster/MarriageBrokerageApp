@@ -5,13 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data // Generates getters, setters, toString, equals, and hashCode
-@NoArgsConstructor // Generates a no-argument constructor
-@AllArgsConstructor // Generates a constructor with all fields
+@Data
+@AllArgsConstructor // Add this or a specific constructor
+@NoArgsConstructor // Good to have a no-args constructor too
 public class AuthResponse {
-    private String accessToken; // Changed name from 'token' to 'accessToken'
-    private String type = "Bearer"; // Default value for the token type
+    private String token; // Or accessToken
+    private String type = "Bearer";
     private Long id;
-    private String email;
-    private String role; // Role of the authenticated user
+    private String email; // Or username
+    private String role;
+    private String message; // ⭐ NEW FIELD for error messages
 }

@@ -1,3 +1,4 @@
+// src/main/java/com/marriagebureau/usermanagement/service/AuthService.java
 package com.marriagebureau.usermanagement.service;
 
 import com.marriagebureau.security.JwtTokenProvider;
@@ -25,12 +26,16 @@ public class AuthService {
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
+    
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
     public AuthResponse register(RegisterRequest registerRequest) {
         if (appUserRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("Email is already taken!");
+            // Updated to use the 6-argument constructor for consistency,
+            // even if a dedicated error DTO is preferred for real errors.
+            // Pass a message like "Email is already taken!"
+            throw new RuntimeException("Email is already taken!"); // Still throwing exception here, handled in AuthController
         }
 
         AppUser user = AppUser.builder()
@@ -44,12 +49,10 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String accessToken = jwtTokenProvider.generateToken(authentication); // Renamed 'token' to 'accessToken'
+        String accessToken = jwtTokenProvider.generateToken(authentication);
 
-        // Updated AuthResponse constructor call to match the new DTO structure (5 args)
-        // assuming AuthResponse uses @AllArgsConstructor for (accessToken, type, id, email, role)
-        // and 'type' has a default value "Bearer" or is explicitly passed.
-        return new AuthResponse(accessToken, "Bearer", user.getId(), user.getUsername(), user.getRole().name());
+        // ⭐ CORRECTED: Added the 6th argument (null for success messages)
+        return new AuthResponse(accessToken, "Bearer", user.getId(), user.getUsername(), user.getRole().name(), null);
     }
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
@@ -58,19 +61,20 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        // Ensure the principal is an AppUser object (or cast it correctly if it's Spring Security's UserDetails)
+        // Note: Your UserDetailsService should return your AppUser class if you want direct access to its fields.
         AppUser authenticatedUser = (AppUser) authentication.getPrincipal();
 
-        String accessToken = jwtTokenProvider.generateToken(authentication); // Renamed 'token' to 'accessToken'
 
-        // Updated AuthResponse constructor call to match the new DTO structure (5 args)
-        // assuming AuthResponse uses @AllArgsConstructor for (accessToken, type, id, email, role)
-        // and 'type' has a default value "Bearer" or is explicitly passed.
-        return new AuthResponse(accessToken, "Bearer", authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getRole().name());
+        String accessToken = jwtTokenProvider.generateToken(authentication);
+
+        // ⭐ CORRECTED: Added the 6th argument (null for success messages)
+        return new AuthResponse(accessToken, "Bearer", authenticatedUser.getId(), authenticatedUser.getUsername(), authenticatedUser.getRole().name(), null);
     }
 
     public AuthResponse registerAdmin(RegisterRequest registerRequest) {
         if (appUserRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("Email is already taken!");
+            throw new RuntimeException("Email is already taken!"); // Still throwing exception here
         }
 
         AppUser admin = AppUser.builder()
@@ -85,11 +89,9 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String accessToken = jwtTokenProvider.generateToken(authentication); // Renamed 'token' to 'accessToken'
+        String accessToken = jwtTokenProvider.generateToken(authentication);
 
-        // Updated AuthResponse constructor call to match the new DTO structure (5 args)
-        // assuming AuthResponse uses @AllArgsConstructor for (accessToken, type, id, email, role)
-        // and 'type' has a default value "Bearer" or is explicitly passed.
-        return new AuthResponse(accessToken, "Bearer", admin.getId(), admin.getUsername(), admin.getRole().name());
+        // ⭐ CORRECTED: Added the 6th argument (null for success messages)
+        return new AuthResponse(accessToken, "Bearer", admin.getId(), admin.getUsername(), admin.getRole().name(), null);
     }
 }

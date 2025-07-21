@@ -1,5 +1,7 @@
 com/marriagebureau/usermanagement/controller/ProfileController.class
 com/marriagebureau/usermanagement/entity/AppUser$AppUserBuilder.class
+com/marriagebureau/dto/SuggestedMatchDTO.class
+com/marriagebureau/dto/CommissionSummaryDTO.class
 com/marriagebureau/usermanagement/service/AuthService.class
 com/marriagebureau/usermanagement/controller/AuthController.class
 com/marriagebureau/usermanagement/entity/AppUser$Role.class
@@ -15,11 +17,15 @@ com/marriagebureau/usermanagement/service/BiodataPdfService.class
 com/marriagebureau/usermanagement/dto/LoginRequest.class
 com/marriagebureau/usermanagement/entity/Profile.class
 com/marriagebureau/profiles/dto/ProfileDTO$ProfileDTOBuilder.class
+com/marriagebureau/dto/DashboardStatsDTO.class
 com/marriagebureau/security/JwtAuthenticationFilter.class
 com/marriagebureau/web/ProtectedController.class
+com/marriagebureau/dto/ClientSubDTO.class
 com/marriagebureau/profiles/dto/ProfileDTO.class
 com/marriagebureau/security/SecurityConfig.class
+com/marriagebureau/dto/TaskDTO.class
 com/marriagebureau/usermanagement/dto/AuthResponse.class
+com/marriagebureau/dto/MatchDTO.class
 com/marriagebureau/usermanagement/controller/UserProfileController.class
 com/marriagebureau/usermanagement/entity/AppUserListener.class
 com/marriagebureau/security/UserPrincipal.class
@@ -32,6 +38,7 @@ com/marriagebureau/security/payload/ProfileSearchDto.class
 com/marriagebureau/usermanagement/controller/AppUserController.class
 com/marriagebureau/usermanagement/entity/Profile$DrinkingHabit.class
 com/marriagebureau/user/User.class
+com/marriagebureau/dto/ClientDTO.class
 com/marriagebureau/usermanagement/entity/Profile$Gender.class
 com/marriagebureau/config/CorsConfig.class
 com/marriagebureau/usermanagement/service/AppUserService.class
@@ -39,6 +46,7 @@ com/marriagebureau/usermanagement/repository/ProfileRepository.class
 com/marriagebureau/config/ApplicationConfig.class
 com/marriagebureau/profiles/dto/ProfileSearchRequest.class
 com/marriagebureau/util/PasswordHashGenerator.class
+com/marriagebureau/controller/DashboardController.class
 com/marriagebureau/usermanagement/entity/Profile$MotherTongue.class
 com/marriagebureau/security/JwtTokenProvider.class
 com/marriagebureau/security/SecurityService.class

@@ -2,16 +2,18 @@
 package com.marriagebureau.usermanagement.service;
 
 import com.lowagie.text.*;
-import com.lowagie.text.pdf.PdfPCell; // ⭐ NEW Import for PdfPTable cells
-import com.lowagie.text.pdf.PdfPTable; // ⭐ NEW Import for table layout
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import java.awt.Color; // Correct import for java.awt.Color
+import java.awt.Color;
 import com.marriagebureau.usermanagement.entity.Profile;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URL; // ⭐ NEW Import for image from URL
+import java.net.URI; // ⭐ Changed: Import for URI
+import java.net.URL;
+import java.net.URISyntaxException; // ⭐ Changed: Import for URISyntaxException
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -24,41 +26,41 @@ public class BiodataPdfService {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfWriter.getInstance(document, baos);
 
-        document.open(); // Open the document before adding content
+        document.open();
 
-        // Use Color from java.awt.Color
         Font titleFont = new Font(Font.HELVETICA, 18, Font.BOLD, Color.DARK_GRAY);
         Font sectionFont = new Font(Font.HELVETICA, 14, Font.BOLD, Color.BLACK);
         Font contentFont = new Font(Font.HELVETICA, 12, Font.NORMAL, Color.BLACK);
         Font labelFont = new Font(Font.HELVETICA, 12, Font.BOLD, Color.BLACK);
 
-        try { // ⭐ NEW: Use try-finally to ensure document is always closed
+        try {
             // Title
             Paragraph title = new Paragraph("Biodata for " + profile.getFullName(), titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(20);
             document.add(title);
 
-            // --- Profile Photo --- ⭐ NEW Section for Profile Photo
+            // --- Profile Photo ---
             if (profile.getPhotoUrl() != null && !profile.getPhotoUrl().isEmpty()) {
                 try {
-                    // Create Image from URL (make sure it's a valid, accessible URL)
-                    Image profileImage = Image.getInstance(new URL(profile.getPhotoUrl()));
-                    profileImage.scaleToFit(100, 100); // Scale image to fit, e.g., 100x100 points
-                    profileImage.setAlignment(Element.ALIGN_RIGHT); // Align to right
-                    profileImage.setSpacingAfter(10); // Space after the image
+                    // ⭐ UPDATED: Using URI to create URL to avoid deprecation warning
+                    URL profileImageUrl = new URI(profile.getPhotoUrl()).toURL();
+                    Image profileImage = Image.getInstance(profileImageUrl);
+                    profileImage.scaleToFit(100, 100);
+                    profileImage.setAlignment(Element.ALIGN_RIGHT);
+                    profileImage.setSpacingAfter(10);
                     document.add(profileImage);
+                } catch (URISyntaxException e) {
+                    System.err.println("Invalid URI for profile image URL: " + profile.getPhotoUrl() + " Error: " + e.getMessage());
+                    // Handle invalid URI (e.g., malformed URL string)
                 } catch (Exception e) {
                     System.err.println("Could not load profile image from URL: " + profile.getPhotoUrl() + " Error: " + e.getMessage());
-                    // In a production environment, you might log this error properly
-                    // and/or add a placeholder image or text indicating missing photo.
                 }
             }
 
-
             // Personal Details Section
-            document.add(createSectionTitle("Personal Details", sectionFont)); // ⭐ Using new helper method
-            document.add(createKeyValueTable(labelFont, contentFont, // ⭐ Using new helper table method
+            document.add(createSectionTitle("Personal Details", sectionFont));
+            document.add(createKeyValueTable(labelFont, contentFont,
                     new String[][]{
                             {"Full Name:", profile.getFullName()},
                             {"Date of Birth:", profile.getDateOfBirth() != null ? profile.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")) : "N/A"},
@@ -142,12 +144,11 @@ public class BiodataPdfService {
                 document.add(Chunk.NEWLINE);
             }
         } finally {
-            document.close(); // ⭐ Ensures the document is always closed, even if errors occur
+            document.close();
         }
         return baos.toByteArray();
     }
 
-    // ⭐ NEW Helper method to create a section title paragraph for consistent styling
     private Paragraph createSectionTitle(String titleText, Font font) {
         Paragraph title = new Paragraph(titleText, font);
         title.setSpacingAfter(5);
@@ -155,28 +156,27 @@ public class BiodataPdfService {
         return title;
     }
 
-    // ⭐ NEW Helper method to add key-value pairs using a PdfPTable for better formatting
     private PdfPTable createKeyValueTable(Font labelFont, Font contentFont, String[][] data) throws DocumentException {
-        PdfPTable table = new PdfPTable(2); // Two columns for label and value
-        table.setWidthPercentage(100); // Table takes 100% of width
-        table.setSpacingBefore(5f); // Space before the table
-        table.setSpacingAfter(5f);  // Space after the table
+        PdfPTable table = new PdfPTable(2);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(5f);
+        table.setSpacingAfter(5f);
 
-        float[] columnWidths = {0.3f, 0.7f}; // 30% for label, 70% for value
-        table.setWidths(columnWidths); // Apply column widths
+        float[] columnWidths = {0.3f, 0.7f};
+        table.setWidths(columnWidths);
 
         for (String[] row : data) {
             String label = row[0];
             String value = row[1];
 
             PdfPCell labelCell = new PdfPCell(new Phrase(label, labelFont));
-            labelCell.setBorder(Rectangle.NO_BORDER); // No border for a clean look
-            labelCell.setPaddingBottom(5); // Padding for vertical spacing
+            labelCell.setBorder(Rectangle.NO_BORDER);
+            labelCell.setPaddingBottom(5);
             labelCell.setPaddingLeft(0);
             table.addCell(labelCell);
 
             PdfPCell valueCell = new PdfPCell(new Phrase(value != null && !value.isEmpty() ? value : "N/A", contentFont));
-            valueCell.setBorder(Rectangle.NO_BORDER); // No border
+            valueCell.setBorder(Rectangle.NO_BORDER);
             valueCell.setPaddingBottom(5);
             valueCell.setPaddingLeft(0);
             table.addCell(valueCell);
