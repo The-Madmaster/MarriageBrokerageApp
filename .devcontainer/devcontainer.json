@@ -25,10 +25,29 @@
 }
 
 {
-  "name": "Node.js Development Environment",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
+  "name": "Node.js & Java Development Environment",
+  "image": "mcr.microsoft.com/devcontainers/universal:latest",
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {}
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17" // Or your desired Java version
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20" // Or your desired Node.js version, like 22
+    }
   },
-  "postCreateCommand": "npm install" // Optional: run npm install on creation
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "Pivotal.vscode-boot-dashboard",
+        "redhat.vscode-xml",
+        "vmware.vscode-spring-boot",
+        "ms-vscode.vscode-typescript-react-extension",
+        "dbaeumer.vscode-eslint"
+        // Add any other extensions you find useful for React or Spring
+      ]
+    }
+  },
+  "postCreateCommand": "npm install --prefix marriage-bureau-frontend || true" // This will run after the Codespace is created. We'll put the React app inside its own subfolder.
+  // The `|| true` makes it not fail if the folder doesn't exist yet, which is fine for the very first creation.
 }
