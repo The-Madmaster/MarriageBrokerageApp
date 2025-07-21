@@ -1,29 +1,45 @@
 {
-  "name": "Full-Stack (Spring Boot & React) Development Environment",
-  "image": "mcr.microsoft.com/devcontainers/universal:latest",
-  "features": {
-    "ghcr.io/devcontainers/features/java:1": {
-      "version": "21" // Change this from "17" to "21"
+    "name": "Full-Stack (Spring Boot & React) Development Environment",
+    "image": "mcr.microsoft.com/devcontainers/universal:latest",
+    "features": {
+        "ghcr.io/devcontainers/features/java:1": {
+            "version": "21",
+            "installMaven": "true", // Assuming your Spring Boot project uses Maven
+            "installGradle": "false" // Set to "true" if you use Gradle
+        },
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "20" // Node.js LTS version
+        }
     },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
-    }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "vscjava.vscode-java-pack",
-        "Pivotal.vscode-boot-dashboard",
-        "redhat.vscode-xml",
-        "vmware.vscode-spring-boot",
-        "Pivotal.vscode-boot-devtools",
-        "vmware.vscode-boot-language-support",
-        "ms-vscode.vscode-typescript-react-extension",
-        "dbaeumer.vscode-eslint"
-      ]
-    }
-  },
-  "forwardPorts": [8080, 3000],
-  "postCreateCommand": "npm install -g npm@latest && ./mvnw clean install -DskipTests && npm install --prefix marriage-bureau-frontend || true",
-  "remoteUser": "vscode"
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "Pivotal.vscode-boot-dashboard",
+                "redhat.vscode-xml",
+                "vmware.vscode-spring-boot",
+                "Pivotal.vscode-boot-devtools",
+                "vmware.vscode-boot-language-support",
+                "ms-vscode.vscode-typescript-react-extension",
+                "dbaeumer.vscode-eslint",
+                "visualstudio.vscode-intellicode", // Added IntelliCode for Java support
+                "redhat.java", // Ensures robust Java language support
+                "vscjava.vscode-maven" // For Maven project support
+            ],
+            "settings": {
+                // Explicitly set java.home for the VS Code Java extensions to find JDK 21
+                "java.home": "/usr/lib/jvm/java-21-openjdk-amd64", // This is the standard path for OpenJDK 21
+                "java.configuration.runtimes": [
+                    {
+                        "name": "JavaSE-21",
+                        "path": "/usr/lib/jvm/java-21-openjdk-amd64", // Ensure this matches your desired JDK path
+                        "default": true
+                    }
+                ]
+            }
+        }
+    },
+    "forwardPorts": [8080, 3000],
+    "postCreateCommand": "sudo update-alternatives --set java $(sudo update-alternatives --list java | grep 'java-21-openjdk' | cut -d' ' -f1) && sudo update-alternatives --set javac $(sudo update-alternatives --list javac | grep 'java-21-openjdk' | cut -d' ' -f1) && export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 && echo 'export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64' >> ~/.bashrc && echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc && npm install -g npm@latest && ./mvnw clean install -DskipTests && npm install --prefix marriage-bureau-frontend || true",
+    "remoteUser": "vscode"
 }
