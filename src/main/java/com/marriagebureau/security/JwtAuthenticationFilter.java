@@ -5,16 +5,17 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.lang.NonNull; // Ensure this import is resolvable if you intend to use @NonNull
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService; // Use the interface
-
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils; // For StringUtils.hasText()
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -23,11 +24,13 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtTokenProvider jwtTokenProvider;
 
-    // We're injecting UserDetailsService here.
-    // @Lazy is typically used to break circular dependencies.
-    // Ensure your CustomUserDetailsService is correctly configured as a @Service
+    // @Lazy is okay here, but if you don't have a circular dependency, it's not strictly necessary.
+    // It can sometimes mask configuration issues if used unnecessarily.
+    // However, for typical Spring Security setups with JwtAuthenticationFilter and CustomUserDetailsService, it's fine.
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -36,37 +39,57 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        // Get JWT (token) from http request
-        String token = getJwtFromRequest(request); // Reusing existing helper for clarity
+        String token = getJwtFromRequest(request);
+
+        // Add debug log to see if token is extracted and if validation is attempted
+        logger.debug("Attempting to authenticate request for URI: {}", request.getRequestURI());
+        logger.debug("Extracted JWT: {}", StringUtils.hasText(token) ? "Present" : "Not Present");
+
 
         // Validate token and ensure userEmail is extracted
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) { // Using validateToken from JwtTokenProvider
-            // Get email from token using the correct method name
-            String userEmail = jwtTokenProvider.getUserEmailFromJWT(token); // Using getUserEmailFromJWT
+        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+            String userEmail = jwtTokenProvider.getUserEmailFromJWT(token);
 
             // If userEmail is found and no authentication is currently set in the context
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Load user details using UserDetailsService
+            // The SecurityContextHolder check prevents overwriting an existing authentication (e.g., from other filters)
+            if (StringUtils.hasText(userEmail) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                logger.debug("JWT is valid. Loading UserDetails for email: {}", userEmail);
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                // Check if the token is valid for the loaded user (this check is often integrated into validateToken already)
-                // The validateToken method already checks expiration etc. So a simple boolean check is enough.
-                // However, if your isTokenValid method from original design also takes UserDetails, then use that.
-                // For now, let's stick to the simple validateToken(token) and load user later.
-                // If you want more granular checks (e.g., specific user details match claims), you'd expand this.
+                // Additional check: Ensure userDetails is not null and is enabled (though AppUser.isEnabled() should handle this)
+                if (userDetails != null && userDetails.isEnabled() && userDetails.isAccountNonExpired() && userDetails.isAccountNonLocked() && userDetails.isCredentialsNonExpired()) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null, // credentials are null as they were already validated via JWT
+                            userDetails.getAuthorities()
+                    );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // If token is valid, create an authentication object and set it in the SecurityContext
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null, // credentials are null because the token itself is the credential here
-                        userDetails.getAuthorities()
-                );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Set Spring Security Context
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    logger.debug("Successfully set authentication in SecurityContext for user: {}", userDetails.getUsername());
+                    // ⭐ The corrected and added crucial debug logs ⭐
+                    logger.debug("--- JWT Filter: SecurityContextHolder State AFTER setting authentication ---");
+                    logger.debug("Authentication Object (in JWT Filter): {}", SecurityContextHolder.getContext().getAuthentication());
+                    logger.debug("Authentication Principal (in JWT Filter): {}", SecurityContextHolder.getContext().getAuthentication() != null ? SecurityContextHolder.getContext().getAuthentication().getPrincipal() : "NULL");
+                    logger.debug("Is Authenticated (in JWT Filter): {}", SecurityContextHolder.getContext().getAuthentication() != null && SecurityContextHolder.getContext().getAuthentication().isAuthenticated());
+                    logger.debug("--- END JWT Filter: SecurityContextHolder State ---");
+                } else {
+                    logger.warn("User details for {} are invalid (e.g., disabled, locked, expired). Not authenticating.", userEmail);
+                }
+            } else {
+                 if (StringUtils.hasText(userEmail)) {
+                    logger.debug("User email {} extracted, but SecurityContext already has authentication.", userEmail);
+                 } else {
+                    logger.debug("User email not extracted from token or is empty.");
+                 }
             }
+        } else {
+            logger.debug("JWT is either not present, empty, or invalid for URI: {}", request.getRequestURI());
+            // This path is expected for unauthenticated requests or invalid tokens.
+            // Spring Security's other filters (like AuthorizationFilter) will handle the 401 if needed.
         }
+
+        // Pass the request to the next filter in the chain
         filterChain.doFilter(request, response);
     }
 
