@@ -7,4 +7,4 @@
 -- Example of a valid bcrypt hash (for 'password'): $2a$10$e.g.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
 
 INSERT INTO app_users (id, username, password, email, contact_number, enabled, created_date, last_updated_date, role) VALUES
-(1, 'admin', '$2a$10$mrPJkAxrnOFrDS7P62st4uKhGmCms6qyzLL9L6ACD.3WtfEbsSC.C', 'admin@example.com', '1234567890', TRUE, NOW(), NOW(), 'ROLE_ADMIN');
+(1, 'admin', '$2a$10$GOmysHADgkc4KHuSiyEUzelw75wWK0xjJ6yEce/sZLVd77gAvRzmi', 'admin@example.com', '1234567890', TRUE, NOW(), NOW(), 'ROLE_ADMIN');

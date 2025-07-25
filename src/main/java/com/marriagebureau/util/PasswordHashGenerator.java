@@ -6,7 +6,7 @@ public class PasswordHashGenerator {
 
     public static void main(String[] args) {
         // The password you want to hash (e.g., the plain-text password for admin@example.com)
-        String rawPassword = "adminpassword";
+        String rawPassword = "TheMadmaster@011";
         // You can change this to hash other passwords as needed
         // String rawPassword = "anotherpassword123";
 
