@@ -1,6 +1,6 @@
 package com.marriagebureau.security;
 
-import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.model.AppUser; // <--- CORRECTED IMPORT for AppUser
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -15,70 +15,60 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-// import java.security.Key; // No longer strictly needed if SecretKey is always used
-import javax.crypto.SecretKey; // **NEW: This import is crucial**
+import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
-public class JwtTokenProvider {
+public class JwtTokenProvider { // Keeping this name, just ensure AuthService uses it
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    @Value("${app.jwt-secret}") // Get secret from application.properties
+    @Value("${app.jwt-secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt-expiration-milliseconds}") // Get expiration from application.properties
+    @Value("${app.jwt-expiration-milliseconds}")
     private long jwtExpirationDate;
 
-    // Helper method to get the signing key.
-    // It's crucial to generate the key once and reuse it across operations.
-    // This is the correct way to get the Key for JJWT 0.12.x+
-    private SecretKey key() { // Changed return type to SecretKey
+    private SecretKey key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    // Method to generate token
     public String generateToken(Authentication authentication) {
         // Ensure that authentication.getPrincipal() correctly returns your AppUser
-        // If you are using CustomUserDetailsService, it often returns User (Spring Security's User)
-        // If your CustomUserDetailsService returns AppUser directly, this cast is fine.
-        // Otherwise, you might need an adapter like UserPrincipal or cast to User and get email.
+        // If your UserDetailsService returns AppUser directly, this cast is fine.
         AppUser userPrincipal = (AppUser) authentication.getPrincipal();
 
-        String userEmail = userPrincipal.getEmail(); // Subject of the token
-        Long userId = userPrincipal.getId(); // Custom claim for userId
+        String userEmail = userPrincipal.getEmail();
+        Long userId = userPrincipal.getId();
 
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 
         String token = Jwts.builder()
                 .subject(userEmail)
-                .claim("userId", userId) // Add userId as a custom claim
+                .claim("userId", userId)
                 .issuedAt(currentDate)
                 .expiration(expireDate)
-                .signWith(key()) // Use the generated Key directly, algorithm inferred from Key
+                .signWith(key())
                 .compact();
         return token;
     }
 
-    // Extracts the user email (subject) from the JWT token.
     public String getUserEmailFromJWT(String token) {
-        // Use Jwts.parser() with .verifyWith(Key) for validation
         Claims claims = Jwts.parser()
-                .verifyWith(key()) // Uses SecretKey now, which matches verifyWith(SecretKey)
-                .build() // Build the parser instance
-                .parseSignedClaims(token) // Use parseSignedClaims() instead of parseClaimsJws()
-                .getPayload(); // Use getPayload() instead of getBody()
+                .verifyWith(key())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
         return claims.getSubject();
     }
 
-    // Validates the JWT token.
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .verifyWith(key()) // Uses SecretKey now, which matches verifyWith(SecretKey)
-                    .build() // Build the parser instance
-                    .parseSignedClaims(token); // Use parseSignedClaims() instead of parseClaimsJws()
+                    .verifyWith(key())
+                    .build()
+                    .parseSignedClaims(token);
             return true;
         } catch (SignatureException ex) {
             logger.error("Invalid JWT signature: {}", ex.getMessage());
@@ -96,13 +86,11 @@ public class JwtTokenProvider {
 
     public Long getUserIdFromJWT(String token) {
         Claims claims = Jwts.parser()
-                .verifyWith(key()) // Uses SecretKey now, which matches verifyWith(SecretKey)
-                .build() // Build the parser instance
-                .parseSignedClaims(token) // Use parseSignedClaims() instead of parseClaimsJws()
-                .getPayload(); // Use getPayload() instead of getBody()
+                .verifyWith(key())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
 
-        // Claims.get() returns an Object. If it's a number, it's typically Integer or Long.
-        // It's safer to cast to Number and then call longValue() to avoid ClassCastException.
         return ((Number) claims.get("userId")).longValue();
     }
 }

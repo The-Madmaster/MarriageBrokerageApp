@@ -2,55 +2,41 @@
 package com.marriagebureau.profiles.dto;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Builder; // Added @Builder for easier test object creation if needed
 
-@Data // Generates getters, setters, toString, equals, hashCode
-@NoArgsConstructor // Generates a no-argument constructor
-@AllArgsConstructor // Generates a constructor with all fields
+// Note: No @NotBlank/@NotNull here, as all search parameters are optional
+@Data
+@Builder // Useful for building search queries in tests or from frontend defaults
 public class ProfileSearchRequest {
-
-    // Age Range
     private Integer minAge;
     private Integer maxAge;
-
-    // Location
+    private String gender; // Will map to Profile.Gender enum
     private String country;
     private String state;
     private String city;
-
-    // Religion & Caste
     private String religion;
     private String caste;
     private String subCaste;
+    private String educationLevel; // Maps to 'education' field in Profile
+    private String profession;     // Maps to 'occupation' field in Profile
+    private String maritalStatus;  // Will map to Profile.MaritalStatus enum
+    private Integer minHeightCm;
+    private Integer maxHeightCm;
+    private String motherTongue;   // Will map to Profile.MotherTongue enum
+    private String diet;           // Will map to Profile.Diet enum
+    private String smokingHabit;   // Will map to Profile.SmokingHabit enum
+    private String drinkingHabit;  // Will map to Profile.DrinkingHabit enum
 
-    // Education & Profession
-    private String educationLevel;
-    private String profession;
+    // Pagination and Sorting (standard fields for paginated searches)
+    @Builder.Default // Default page to 0 if not provided
+    private int page = 0;
 
-    // Marital Status
-    private String maritalStatus;
+    @Builder.Default // Default size to 10 if not provided
+    private int size = 10;
 
-    // Gender of the *desired partner* (assuming the current user implicitly provides their gender)
-    private String gender;
+    @Builder.Default // Default sort by ID if not provided
+    private String sortBy = "id";
 
-    // Height Range
-    private Integer minHeightCm; // in centimeters
-    private Integer maxHeightCm; // in centimeters
-
-    // Mother Tongue
-    private String motherTongue;
-
-    // Dietary Preferences
-    private String diet;
-
-    // Habits
-    private String smokingHabit;
-    private String drinkingHabit;
-
-    // Pagination and Sorting (Optional but good practice for search results)
-    private Integer page;
-    private Integer size;
-    private String sortBy; // e.g., "age", "lastUpdatedDate"
-    private String sortDirection; // "asc" or "desc"
+    @Builder.Default // Default sort direction to ASC if not provided
+    private String sortDirection = "asc";
 }
