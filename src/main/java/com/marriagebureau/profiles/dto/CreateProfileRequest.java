@@ -4,6 +4,8 @@ import com.marriagebureau.usermanagement.entity.Profile; // To use Profile's enu
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
+// import java.net.URL;
+import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDate;
 

@@ -6,6 +6,9 @@ import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+// import java.net.URL;
+import org.hibernate.validator.constraints.URL;
+import com.marriagebureau.profiles.repository.ProfileRepository;
 
 @Data
 public class UpdateProfileRequest {

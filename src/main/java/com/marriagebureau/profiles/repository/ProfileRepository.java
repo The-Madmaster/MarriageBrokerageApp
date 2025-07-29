@@ -3,14 +3,19 @@ package com.marriagebureau.profiles.repository;
 
 import com.marriagebureau.usermanagement.entity.Profile;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor; // <-- ADD THIS IMPORT
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import com.marriagebureau.profiles.dto.UpdateProfileRequest;
+import java.util.List;
+import java.util.Optional;
 
-// Your ProfileRepository should extend both JpaRepository and JpaSpecificationExecutor
+@Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long>, JpaSpecificationExecutor<Profile> {
-    // Custom query to find a profile by its associated AppUser ID
-    // Assuming your Profile entity has a 'broker' field which is the AppUser
-    // Adjust this method name if your AppUser relationship field name in Profile is different (e.g., 'user')
-    // Corrected method name to match the Profile entity's relationship
-    // In Profile.java, the field is `private AppUser appUser;`
-    Optional<Profile> findByAppUser_Id(Long appUserId);
+    Optional<Profile> findByAppUserId(Long appUserId);
+
+    // Custom query to find all active profiles excluding a given ID
+    @Query("SELECT p FROM Profile p WHERE p.isActive = true AND p.id <> :excludeProfileId")
+    List<Profile> findAllActiveProfilesExcluding(@Param("excludeProfileId") Long excludeProfileId);
 }

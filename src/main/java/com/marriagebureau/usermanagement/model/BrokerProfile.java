@@ -1,7 +1,5 @@
 package com.marriagebureau.brokermanagement.model;
 
-import com.marriagebureau.usermanagement.model.AppUser; // Import AppUser from its correct model package
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime; // For createdDate and lastUpdatedDate
+
+import com.marriagebureau.usermanagement.entity.AppUser;
 
 @Data
 @Builder

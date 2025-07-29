@@ -1,5 +1,5 @@
 // src/main/java/com/marriagebureau/usermanagement/model/AppUser.java
-package com.marriagebureau.usermanagement.model; // <--- Package is correct
+package com.marriagebureau.usermanagement.entity; // <--- Package is correct
 
 import com.marriagebureau.usermanagement.model.Role; // <--- Import the external Role enum
 import com.marriagebureau.brokermanagement.model.BrokerProfile; // <--- Import BrokerProfile (will create this soon)

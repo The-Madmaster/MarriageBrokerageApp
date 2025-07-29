@@ -6,8 +6,8 @@ import com.marriagebureau.brokermanagement.dto.CreateBrokerProfileRequest;
 import com.marriagebureau.brokermanagement.dto.UpdateBrokerProfileRequest; // <-- Ensure this import is present
 import com.marriagebureau.brokermanagement.model.BrokerProfile;
 import com.marriagebureau.brokermanagement.repository.BrokerProfileRepository;
-import com.marriagebureau.usermanagement.model.AppUser;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
+import com.marriagebureau.usermanagement.entity.AppUser;
 import com.marriagebureau.usermanagement.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;

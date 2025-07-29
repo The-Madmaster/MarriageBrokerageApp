@@ -1,10 +1,12 @@
 package com.marriagebureau.profiles.service;
 
 import com.marriagebureau.profiles.dto.CreateProfileRequest;
+import com.marriagebureau.profiles.dto.UpdateProfileRequest;
+import com.marriagebureau.profiles.repository.ProfileRepository;
 import com.marriagebureau.profiles.dto.ProfileResponse;
 import com.marriagebureau.profiles.dto.ProfileSearchRequest;
 import com.marriagebureau.profiles.repository.ProfileRepository;
-import com.marriagebureau.profiles.specification.ProfileSpecification;
+// import com.marriagebureau.profiles.specification.ProfileSpecification;
 import com.marriagebureau.usermanagement.entity.AppUser;
 import com.marriagebureau.usermanagement.entity.Profile;
 import com.marriagebureau.usermanagement.exception.ResourceNotFoundException;

@@ -1,6 +1,5 @@
 package com.marriagebureau.security;
 
-import com.marriagebureau.usermanagement.model.AppUser; // <--- CORRECTED IMPORT for AppUser
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -14,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import com.marriagebureau.usermanagement.entity.AppUser;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
