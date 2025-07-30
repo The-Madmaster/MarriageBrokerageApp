@@ -1,6 +1,6 @@
 package com.marriagebureau.usermanagement.service;
 
-import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.model.AppUser;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;

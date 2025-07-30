@@ -2,7 +2,7 @@
 package com.marriagebureau.brokermanagement.repository;
 
 import com.marriagebureau.brokermanagement.model.BrokerProfile; // Import the BrokerProfile entity
-import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.model.AppUser;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -5,8 +5,8 @@ import com.marriagebureau.brokermanagement.dto.BrokerProfileResponse;
 import com.marriagebureau.brokermanagement.dto.CreateBrokerProfileRequest;
 import com.marriagebureau.brokermanagement.dto.UpdateBrokerProfileRequest; // Import for update DTO
 import com.marriagebureau.brokermanagement.service.BrokerProfileService;
-import com.marriagebureau.usermanagement.entity.AppUser;
 import com.marriagebureau.usermanagement.exception.ResourceNotFoundException;
+import com.marriagebureau.usermanagement.model.AppUser;
 
 import jakarta.validation.Valid; // For DTO validation
 import lombok.RequiredArgsConstructor;

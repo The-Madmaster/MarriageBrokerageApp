@@ -1,6 +1,6 @@
 package com.marriagebureau.usermanagement.controller;
 
-import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.model.AppUser;
 import com.marriagebureau.usermanagement.service.AppUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

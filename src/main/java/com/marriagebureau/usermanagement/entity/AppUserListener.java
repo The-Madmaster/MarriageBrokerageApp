@@ -5,6 +5,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
 
+import com.marriagebureau.usermanagement.model.AppUser;
+
 public class AppUserListener {
 
     @PrePersist

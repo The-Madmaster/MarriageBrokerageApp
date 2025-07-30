@@ -1,7 +1,9 @@
 package com.marriagebureau.usermanagement.repository;
 
-import com.marriagebureau.usermanagement.entity.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.marriagebureau.usermanagement.model.AppUser;
+
 import java.util.Optional;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {

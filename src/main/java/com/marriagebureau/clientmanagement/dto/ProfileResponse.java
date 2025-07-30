@@ -1,15 +1,18 @@
-package com.marriagebureau.profiles.dto;
+package com.marriagebureau.clientmanagement.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * DTO for representing a client profile in API responses.
+ * Includes all relevant details for display.
+ */
 @Data
 @Builder
 public class ProfileResponse {
     private Long id;
-    private Long appUserId;
+    private Long brokerId;
     private String email;
 
     // --- Core Personal Details ---
@@ -45,8 +48,6 @@ public class ProfileResponse {
     // --- About Me & Photos ---
     private String aboutMe;
     private String photoUrl;
-
-    // --- Account Status ---
     private boolean isActive;
 
     // --- Preferred Partner Criteria ---
@@ -54,16 +55,10 @@ public class ProfileResponse {
     private Integer preferredPartnerMaxAge;
     private String preferredPartnerReligion;
     private String preferredPartnerCaste;
-    // START: ADDED NEW FIELDS FOR PREFERRED PARTNER CRITERIA
-    private String preferredPartnerSubCaste;
-    private String preferredPartnerCity;
-    private String preferredPartnerState;
-    private String preferredPartnerCountry;
-    // END: ADDED NEW FIELDS FOR PREFERRED PARTNER CRITERIA
     private Integer preferredPartnerMinHeightCm;
     private Integer preferredPartnerMaxHeightCm;
-
-    // --- Auditing Fields (if you add them to your Profile entity) ---
+    
+    // --- Auditing Fields ---
     private LocalDateTime createdDate;
     private LocalDateTime lastUpdatedDate;
 }

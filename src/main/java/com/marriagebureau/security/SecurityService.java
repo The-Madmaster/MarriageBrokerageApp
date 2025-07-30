@@ -1,10 +1,11 @@
 // src/main/java/com/marriagebureau/security/SecurityService.java
 package com.marriagebureau.security;
 
-import com.marriagebureau.usermanagement.entity.AppUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import com.marriagebureau.usermanagement.model.AppUser;
 
 @Service
 public class SecurityService {

@@ -7,7 +7,7 @@ import com.marriagebureau.security.JwtTokenProvider; // <--- This should be the 
 import com.marriagebureau.usermanagement.dto.AuthResponse;
 import com.marriagebureau.usermanagement.dto.LoginRequest;
 import com.marriagebureau.usermanagement.dto.RegisterRequest;
-import com.marriagebureau.usermanagement.entity.AppUser;
+import com.marriagebureau.usermanagement.model.AppUser;
 import com.marriagebureau.usermanagement.model.Role;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
 import com.marriagebureau.usermanagement.exception.UserAlreadyExistsException;

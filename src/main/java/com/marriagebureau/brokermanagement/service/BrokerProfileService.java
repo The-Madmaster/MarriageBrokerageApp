@@ -7,8 +7,8 @@ import com.marriagebureau.brokermanagement.dto.UpdateBrokerProfileRequest; // <-
 import com.marriagebureau.brokermanagement.model.BrokerProfile;
 import com.marriagebureau.brokermanagement.repository.BrokerProfileRepository;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
-import com.marriagebureau.usermanagement.entity.AppUser;
 import com.marriagebureau.usermanagement.exception.ResourceNotFoundException;
+import com.marriagebureau.usermanagement.model.AppUser;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

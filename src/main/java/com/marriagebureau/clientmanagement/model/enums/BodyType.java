@@ -1,2 +1,2 @@
 package com.marriagebureau.clientmanagement.model.enums;
-public enum Gender { MALE, FEMALE, OTHER }
+public enum BodyType { SLIM, ATHLETIC, AVERAGE, HEAVY }
