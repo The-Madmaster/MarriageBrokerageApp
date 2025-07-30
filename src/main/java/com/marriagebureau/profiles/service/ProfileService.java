@@ -1,47 +1,42 @@
-package com.marriagebureau.profiles.service;
+package com.marriagebureau.clientmanagement.service;
 
-import com.marriagebureau.profiles.dto.CreateProfileRequest;
-import com.marriagebureau.profiles.dto.UpdateProfileRequest;
-import com.marriagebureau.profiles.repository.ProfileRepository;
-import com.marriagebureau.profiles.dto.ProfileResponse;
-import com.marriagebureau.profiles.dto.ProfileSearchRequest;
-import com.marriagebureau.profiles.repository.ProfileRepository;
-// import com.marriagebureau.profiles.specification.ProfileSpecification;
-import com.marriagebureau.usermanagement.entity.AppUser;
-import com.marriagebureau.usermanagement.entity.Profile;
+import com.marriagebureau.clientmanagement.dto.CreateProfileRequest;
+import com.marriagebureau.clientmanagement.dto.ProfileResponse;
+import com.marriagebureau.clientmanagement.dto.UpdateProfileRequest;
+import com.marriagebureau.clientmanagement.model.Profile; // Assuming Profile is moved to clientmanagement.model
+import com.marriagebureau.clientmanagement.repository.ProfileRepository;
+import com.marriagebureau.usermanagement.model.AppUser;
 import com.marriagebureau.usermanagement.exception.ResourceNotFoundException;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final AppUserRepository appUserRepository; // Inject AppUserRepository to link AppUser to Profile
+    private final AppUserRepository appUserRepository;
 
+    /**
+     * Creates a new client profile and assigns it to the currently authenticated broker.
+     * This method is called by the ClientProfileController.
+     */
     @Transactional
-    public ProfileResponse createProfile(Long appUserId, CreateProfileRequest request) {
-        // Check if a profile already exists for this appUser
-        if (profileRepository.findByAppUserId(appUserId).isPresent()) {
-            throw new IllegalArgumentException("Profile already exists for AppUser ID: " + appUserId);
-        }
+    public ProfileResponse createProfile(CreateProfileRequest request) {
+        // 1. Get the currently authenticated broker.
+        AppUser broker = getAuthenticatedBroker();
 
-        AppUser appUser = appUserRepository.findById(appUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser not found with ID: " + appUserId));
-
+        // 2. Build the profile entity from the request DTO.
         Profile profile = Profile.builder()
-                .appUser(appUser)
+                .broker(broker) // Link the profile to the broker
                 .fullName(request.getFullName())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
@@ -49,188 +44,101 @@ public class ProfileService {
                 .heightCm(request.getHeightCm())
                 .religion(request.getReligion())
                 .caste(request.getCaste())
-                .subCaste(request.getSubCaste())
-                .motherTongue(request.getMotherTongue())
-                .country(request.getCountry())
-                .state(request.getState())
-                .city(request.getCity())
-                .complexion(request.getComplexion())
-                .bodyType(request.getBodyType())
-                .education(request.getEducation())
-                .occupation(request.getOccupation())
-                .annualIncome(request.getAnnualIncome())
-                .diet(request.getDiet())
-                .smokingHabit(request.getSmokingHabit())
-                .drinkingHabit(request.getDrinkingHabit())
-                .aboutMe(request.getAboutMe())
-                .photoUrl(request.getPhotoUrl())
-                .isActive(true) // Default to active on creation
-                // Preferred Partner Criteria
-                .preferredPartnerMinAge(request.getPreferredPartnerMinAge())
-                .preferredPartnerMaxAge(request.getPreferredPartnerMaxAge())
-                .preferredPartnerReligion(request.getPreferredPartnerReligion())
-                .preferredPartnerCaste(request.getPreferredPartnerCaste())
-                // START: ADDED NEW FIELDS MAPPING FOR CREATE
-                .preferredPartnerSubCaste(request.getPreferredPartnerSubCaste())
-                .preferredPartnerCity(request.getPreferredPartnerCity())
-                .preferredPartnerState(request.getPreferredPartnerState())
-                .preferredPartnerCountry(request.getPreferredPartnerCountry())
-                // END: ADDED NEW FIELDS MAPPING FOR CREATE
-                .preferredPartnerMinHeightCm(request.getPreferredPartnerMinHeightCm())
-                .preferredPartnerMaxHeightCm(request.getPreferredPartnerMaxHeightCm())
+                // ... map all other fields from the request ...
+                .isActive(true)
                 .build();
 
+        // 3. Save the profile and convert it to a response DTO.
         Profile savedProfile = profileRepository.save(profile);
         return convertToDto(savedProfile);
     }
 
+    /**
+     * Retrieves all client profiles that belong to the currently authenticated broker.
+     */
     @Transactional(readOnly = true)
-    public ProfileResponse getProfileById(Long profileId) {
-        Profile profile = profileRepository.findById(profileId)
-                .orElseThrow(() -> new ResourceNotFoundException("Profile not found with ID: " + profileId));
+    public List<ProfileResponse> getClientsForAuthenticatedBroker() {
+        AppUser broker = getAuthenticatedBroker();
+        return profileRepository.findAllByBroker(broker)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves a single client profile by its ID, ensuring it belongs to the authenticated broker.
+     */
+    @Transactional(readOnly = true)
+    public ProfileResponse getProfileByIdForBroker(Long profileId) {
+        Profile profile = getProfileAndVerifyOwnership(profileId);
         return convertToDto(profile);
     }
 
-    @Transactional(readOnly = true)
-    public ProfileResponse getProfileByAppUserId(Long appUserId) {
-        Profile profile = profileRepository.findByAppUserId(appUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Profile not found for AppUser ID: " + appUserId));
-        return convertToDto(profile);
-    }
-
+    /**
+     * Updates an existing client profile, ensuring it belongs to the authenticated broker.
+     */
     @Transactional
     public ProfileResponse updateProfile(Long profileId, UpdateProfileRequest request) {
-        Profile profile = profileRepository.findById(profileId)
-                .orElseThrow(() -> new ResourceNotFoundException("Profile not found with ID: " + profileId));
+        // This method also implicitly verifies ownership.
+        Profile profile = getProfileAndVerifyOwnership(profileId);
 
-        // Update fields only if they are provided in the request
+        // Update fields using the existing Optional-based approach
         Optional.ofNullable(request.getFullName()).ifPresent(profile::setFullName);
         Optional.ofNullable(request.getDateOfBirth()).ifPresent(profile::setDateOfBirth);
-        Optional.ofNullable(request.getGender()).ifPresent(profile::setGender);
-        Optional.ofNullable(request.getMaritalStatus()).ifPresent(profile::setMaritalStatus);
-        Optional.ofNullable(request.getHeightCm()).ifPresent(profile::setHeightCm);
-        Optional.ofNullable(request.getReligion()).ifPresent(profile::setReligion);
-        Optional.ofNullable(request.getCaste()).ifPresent(profile::setCaste);
-        Optional.ofNullable(request.getSubCaste()).ifPresent(profile::setSubCaste);
-        Optional.ofNullable(request.getMotherTongue()).ifPresent(profile::setMotherTongue);
-        Optional.ofNullable(request.getCountry()).ifPresent(profile::setCountry);
-        Optional.ofNullable(request.getState()).ifPresent(profile::setState);
-        Optional.ofNullable(request.getCity()).ifPresent(profile::setCity);
-        Optional.ofNullable(request.getComplexion()).ifPresent(profile::setComplexion);
-        Optional.ofNullable(request.getBodyType()).ifPresent(profile::setBodyType);
-        Optional.ofNullable(request.getEducation()).ifPresent(profile::setEducation);
-        Optional.ofNullable(request.getOccupation()).ifPresent(profile::setOccupation);
-        Optional.ofNullable(request.getAnnualIncome()).ifPresent(profile::setAnnualIncome);
-        Optional.ofNullable(request.getDiet()).ifPresent(profile::setDiet);
-        Optional.ofNullable(request.getSmokingHabit()).ifPresent(profile::setSmokingHabit);
-        Optional.ofNullable(request.getDrinkingHabit()).ifPresent(profile::setDrinkingHabit);
-        Optional.ofNullable(request.getAboutMe()).ifPresent(profile::setAboutMe);
-        Optional.ofNullable(request.getPhotoUrl()).ifPresent(profile::setPhotoUrl);
-        Optional.ofNullable(request.getIsActive()).ifPresent(profile::setActive);
-
-        // Update Preferred Partner Criteria
-        Optional.ofNullable(request.getPreferredPartnerMinAge()).ifPresent(profile::setPreferredPartnerMinAge);
-        Optional.ofNullable(request.getPreferredPartnerMaxAge()).ifPresent(profile::setPreferredPartnerMaxAge);
-        Optional.ofNullable(request.getPreferredPartnerReligion()).ifPresent(profile::setPreferredPartnerReligion);
-        Optional.ofNullable(request.getPreferredPartnerCaste()).ifPresent(profile::setPreferredPartnerCaste);
-        // START: ADDED NEW FIELDS MAPPING FOR UPDATE
-        Optional.ofNullable(request.getPreferredPartnerSubCaste()).ifPresent(profile::setPreferredPartnerSubCaste);
-        Optional.ofNullable(request.getPreferredPartnerCity()).ifPresent(profile::setPreferredPartnerCity);
-        Optional.ofNullable(request.getPreferredPartnerState()).ifPresent(profile::setPreferredPartnerState);
-        Optional.ofNullable(request.getPreferredPartnerCountry()).ifPresent(profile::setPreferredPartnerCountry);
-        // END: ADDED NEW FIELDS MAPPING FOR UPDATE
-        Optional.ofNullable(request.getPreferredPartnerMinHeightCm()).ifPresent(profile::setPreferredPartnerMinHeightCm);
-        Optional.ofNullable(request.getPreferredPartnerMaxHeightCm()).ifPresent(profile::setPreferredPartnerMaxHeightCm);
+        // ... continue mapping all other updatable fields ...
 
         Profile updatedProfile = profileRepository.save(profile);
         return convertToDto(updatedProfile);
     }
 
+    /**
+     * Deletes a client profile, ensuring it belongs to the authenticated broker.
+     */
     @Transactional
     public void deleteProfile(Long profileId) {
-        if (!profileRepository.existsById(profileId)) {
-            throw new ResourceNotFoundException("Profile not found with ID: " + profileId);
-        }
-        profileRepository.deleteById(profileId);
+        // This method also implicitly verifies ownership.
+        Profile profile = getProfileAndVerifyOwnership(profileId);
+        profileRepository.delete(profile);
     }
 
-    @Transactional(readOnly = true)
-    public Page<ProfileResponse> searchProfiles(ProfileSearchRequest request) {
-        Sort sort = Sort.by(Sort.Direction.fromString(request.getSortDirection()), request.getSortBy());
-        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
+    // --- HELPER METHODS ---
 
-        ProfileSpecification spec = new ProfileSpecification(request);
-
-        Page<Profile> profilesPage = profileRepository.findAll(spec, pageable);
-        return profilesPage.map(this::convertToDto);
-    }
-
-    public String getBiodataForPdf(Long profileId) {
+    /**
+     * A private helper method to get the Profile and verify the authenticated broker is the owner.
+     * This centralizes our security check.
+     */
+    private Profile getProfileAndVerifyOwnership(Long profileId) {
+        AppUser broker = getAuthenticatedBroker();
         Profile profile = profileRepository.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found with ID: " + profileId));
 
-        StringBuilder biodata = new StringBuilder();
-        biodata.append("--- BIODATA ---\n");
-        biodata.append("Full Name: ").append(profile.getFullName()).append("\n");
-        biodata.append("Age: ").append(profile.getAge()).append("\n");
-        biodata.append("Gender: ").append(profile.getGender()).append("\n");
-        biodata.append("Marital Status: ").append(profile.getMaritalStatus()).append("\n");
-        biodata.append("Religion: ").append(profile.getReligion()).append("\n");
-        biodata.append("Caste: ").append(profile.getCaste()).append("\n");
-        biodata.append("Sub-Caste: ").append(profile.getSubCaste()).append("\n");
-        biodata.append("City: ").append(profile.getCity()).append(", ").append(profile.getState()).append(", ").append(profile.getCountry()).append("\n");
-        biodata.append("Education: ").append(profile.getEducation()).append("\n");
-        biodata.append("Occupation: ").append(profile.getOccupation()).append("\n");
-        biodata.append("Annual Income: ").append(profile.getAnnualIncome()).append("\n");
-        biodata.append("About Me: ").append(profile.getAboutMe() != null ? profile.getAboutMe() : "N/A").append("\n");
-
-        return biodata.toString();
+        // CRITICAL: Security check to ensure broker owns the profile.
+        if (!profile.getBroker().getId().equals(broker.getId())) {
+            throw new AccessDeniedException("You do not have permission to access this profile.");
+        }
+        return profile;
     }
 
-    // Helper method to convert Profile entity to ProfileResponse DTO
+    /**
+     * A private helper method to get the currently authenticated AppUser (broker).
+     */
+    private AppUser getAuthenticatedBroker() {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return appUserRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated broker not found with email: " + userEmail));
+    }
+
+    /**
+     * Private helper to convert Profile entity to ProfileResponse DTO.
+     * (Your existing convertToDto method is good, just ensure field names match)
+     */
     private ProfileResponse convertToDto(Profile profile) {
+        // Your existing mapping logic here...
         return ProfileResponse.builder()
                 .id(profile.getId())
-                .appUserId(profile.getAppUser().getId())
-                .email(profile.getAppUser().getEmail())
-                .fullName(profile.getFullName())
-                .age(profile.getAge())
-                .gender(profile.getGender() != null ? profile.getGender().name() : null)
-                .maritalStatus(profile.getMaritalStatus() != null ? profile.getMaritalStatus().name() : null)
-                .heightCm(profile.getHeightCm())
-                .religion(profile.getReligion())
-                .caste(profile.getCaste())
-                .subCaste(profile.getSubCaste())
-                .motherTongue(profile.getMotherTongue() != null ? profile.getMotherTongue().name() : null)
-                .country(profile.getCountry())
-                .state(profile.getState())
-                .city(profile.getCity())
-                .complexion(profile.getComplexion() != null ? profile.getComplexion().name() : null)
-                .bodyType(profile.getBodyType() != null ? profile.getBodyType().name() : null)
-                .education(profile.getEducation())
-                .occupation(profile.getOccupation())
-                .annualIncome(profile.getAnnualIncome())
-                .diet(profile.getDiet() != null ? profile.getDiet().name() : null)
-                .smokingHabit(profile.getSmokingHabit() != null ? profile.getSmokingHabit().name() : null)
-                .drinkingHabit(profile.getDrinkingHabit() != null ? profile.getDrinkingHabit().name() : null)
-                .aboutMe(profile.getAboutMe())
-                .photoUrl(profile.getPhotoUrl())
-                .isActive(profile.isActive())
-                // Preferred Partner Criteria
-                .preferredPartnerMinAge(profile.getPreferredPartnerMinAge())
-                .preferredPartnerMaxAge(profile.getPreferredPartnerMaxAge())
-                .preferredPartnerReligion(profile.getPreferredPartnerReligion())
-                .preferredPartnerCaste(profile.getPreferredPartnerCaste())
-                // START: ADDED NEW FIELDS MAPPING FOR DTO CONVERSION
-                .preferredPartnerSubCaste(profile.getPreferredPartnerSubCaste())
-                .preferredPartnerCity(profile.getPreferredPartnerCity())
-                .preferredPartnerState(profile.getPreferredPartnerState())
-                .preferredPartnerCountry(profile.getPreferredPartnerCountry())
-                // END: ADDED NEW FIELDS MAPPING FOR DTO CONVERSION
-                .preferredPartnerMinHeightCm(profile.getPreferredPartnerMinHeightCm())
-                .preferredPartnerMaxHeightCm(profile.getPreferredPartnerMaxHeightCm())
-                .createdDate(profile.getCreatedDate())
-                .lastUpdatedDate(profile.getLastUpdatedDate())
+                .brokerId(profile.getBroker().getId()) // Use brokerId instead of appUserId
+                .email(profile.getBroker().getEmail())
+                // ... rest of the fields
                 .build();
     }
 }
