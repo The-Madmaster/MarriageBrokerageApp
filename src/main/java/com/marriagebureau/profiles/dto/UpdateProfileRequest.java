@@ -1,5 +1,6 @@
 package com.marriagebureau.profiles.dto;
 
+import com.marriagebureau.clientmanagement.repository.ProfileRepository;
 import com.marriagebureau.usermanagement.entity.Profile; // To use Profile's enums
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -8,7 +9,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 // import java.net.URL;
 import org.hibernate.validator.constraints.URL;
-import com.marriagebureau.profiles.repository.ProfileRepository;
 
 @Data
 public class UpdateProfileRequest {
@@ -21,8 +21,8 @@ public class UpdateProfileRequest {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dateOfBirth;
 
-    private Profile.Gender gender;
-    private Profile.MaritalStatus maritalStatus;
+    private com.marriagebureau.clientmanagement.model.enums.Gender gender;
+    private com.marriagebureau.clientmanagement.model.enums.MaritalStatus maritalStatus;
 
     @Min(value = 50, message = "Height must be at least 50 cm")
     @Max(value = 300, message = "Height cannot exceed 300 cm")

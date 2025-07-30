@@ -23,10 +23,10 @@ public class CreateProfileRequest {
     private LocalDate dateOfBirth;
 
     @NotNull(message = "Gender is mandatory")
-    private Profile.Gender gender;
+    private com.marriagebureau.clientmanagement.model.enums.Gender gender;
 
     @NotNull(message = "Marital Status is mandatory")
-    private Profile.MaritalStatus maritalStatus;
+    private com.marriagebureau.clientmanagement.model.enums.MaritalStatus maritalStatus;
 
     @NotNull(message = "Height in centimeters is mandatory")
     @Min(value = 50, message = "Height must be at least 50 cm") // Realistic min height

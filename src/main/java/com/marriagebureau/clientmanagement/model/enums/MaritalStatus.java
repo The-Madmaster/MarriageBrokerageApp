@@ -1,5 +1,5 @@
 // src/main/java/com/marriagebureau/entity/MaritalStatus.java
-package com.marriagebureau.entity;
+package com.marriagebureau.clientmanagement.model.enums;
 
 public enum MaritalStatus {
     SINGLE,

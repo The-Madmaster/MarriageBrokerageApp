@@ -1,9 +1,9 @@
 // src/main/java/com/marriagebureau/matches/service/MatchService.java
 package com.marriagebureau.matches.service;
 
+import com.marriagebureau.clientmanagement.repository.ProfileRepository;
 import com.marriagebureau.matches.dto.MatchResultDto;
 import com.marriagebureau.profiles.dto.ProfileResponse;
-import com.marriagebureau.profiles.repository.ProfileRepository;
 import com.marriagebureau.profiles.service.ProfileService; // To use convertToDto
 import com.marriagebureau.usermanagement.entity.Profile;
 import com.marriagebureau.usermanagement.exception.ResourceNotFoundException;
