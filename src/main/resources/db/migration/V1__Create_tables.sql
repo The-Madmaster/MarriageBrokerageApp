@@ -14,6 +14,23 @@ CREATE TABLE app_users (
     last_updated_date TIMESTAMP
 );
 
+CREATE TABLE broker_profiles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    app_user_id BIGINT NOT NULL UNIQUE,
+    broker_name VARCHAR(255) NOT NULL,
+    firm_name VARCHAR(255),
+    registration_number VARCHAR(255) NOT NULL UNIQUE,
+    address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    pincode VARCHAR(10) NOT NULL,
+    firm_contact_number VARCHAR(20),
+    created_date TIMESTAMP,
+    last_updated_date TIMESTAMP,
+    FOREIGN KEY (app_user_id) REFERENCES app_users(id) ON DELETE CASCADE
+);
+
+-- THIS IS THE COMPLETE VERSION OF THE CLIENT_PROFILES TABLE
 CREATE TABLE client_profiles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     broker_id BIGINT NOT NULL,

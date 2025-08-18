@@ -1,8 +1,8 @@
 // src/main/java/com/marriagebureau/security/CustomUserDetailsService.java
-package com.marriagebureau.security;
+// package com.marriagebureau.security;
 
-import com.marriagebureau.usermanagement.model.AppUser;
-import com.marriagebureau.usermanagement.repository.AppUserRepository;
+//import com.marriagebureau.usermanagement.model.AppUser;
+/* import com.marriagebureau.usermanagement.repository.AppUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -25,4 +25,4 @@ public class CustomUserDetailsService implements UserDetailsService {
         // AppUser now implements UserDetails directly
         return appUser;
     }
-}
+} */
