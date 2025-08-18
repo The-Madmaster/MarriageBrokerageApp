@@ -1,18 +1,18 @@
-// src/main/java/com/marriagebureau/usermanagement/dto/AuthResponse.java
 package com.marriagebureau.usermanagement.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor // Add this or a specific constructor
-@NoArgsConstructor // Good to have a no-args constructor too
+@Builder // <-- This is the missing annotation
+@AllArgsConstructor
+@NoArgsConstructor
 public class AuthResponse {
-    private String token; // Or accessToken
-    private String type = "Bearer";
-    private Long id;
-    private String email; // Or username
-    private String role;
-    private String message; // ⭐ NEW FIELD for error messages
+    private String accessToken;
+
+    public String getTokenType() {
+        return "Bearer";
+    }
 }

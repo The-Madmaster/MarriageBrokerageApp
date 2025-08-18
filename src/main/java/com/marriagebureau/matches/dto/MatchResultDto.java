@@ -1,7 +1,7 @@
 // src/main/java/com/marriagebureau/matches/dto/MatchResultDto.java
 package com.marriagebureau.matches.dto;
 
-import com.marriagebureau.profiles.dto.ProfileResponse;
+import com.marriagebureau.clientmanagement.dto.ProfileResponse;
 import lombok.Builder;
 import lombok.Data;
 

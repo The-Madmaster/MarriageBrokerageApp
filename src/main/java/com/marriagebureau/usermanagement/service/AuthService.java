@@ -1,39 +1,34 @@
-// src/main/java/com/marriagebureau/usermanagement/service/AuthService.java
 package com.marriagebureau.usermanagement.service;
 
-// REMOVE: import com.marriagebureau.security.JwtService;
-import com.marriagebureau.security.JwtTokenProvider; // <--- This should be the ONLY JWT import
-
+import com.marriagebureau.security.JwtTokenProvider;
 import com.marriagebureau.usermanagement.dto.AuthResponse;
 import com.marriagebureau.usermanagement.dto.LoginRequest;
 import com.marriagebureau.usermanagement.dto.RegisterRequest;
+import com.marriagebureau.usermanagement.exception.UserAlreadyExistsException;
 import com.marriagebureau.usermanagement.model.AppUser;
 import com.marriagebureau.usermanagement.model.Role;
 import com.marriagebureau.usermanagement.repository.AppUserRepository;
-import com.marriagebureau.usermanagement.exception.UserAlreadyExistsException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AuthService {
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider; // <--- Changed to use JwtTokenProvider
+    private final JwtTokenProvider jwtTokenProvider;
 
-
+    /**
+     * Registers a new broker, saves them to the database, and returns a JWT.
+     */
     public AuthResponse register(RegisterRequest registerRequest) {
-        if (appUserRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+        if (appUserRepository.existsByEmail(registerRequest.getEmail())) {
             throw new UserAlreadyExistsException("Email '" + registerRequest.getEmail() + "' is already taken.");
         }
 
@@ -41,74 +36,31 @@ public class AuthService {
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .contactNumber(registerRequest.getContactNumber())
+                .role(Role.ROLE_BROKER) // Default role for public registration
                 .build();
 
-        appUserRepository.save(user);
+        AppUser savedUser = appUserRepository.save(user);
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String accessToken = jwtTokenProvider.generateToken(authentication); // <--- Use jwtTokenProvider
+        // Directly create the Authentication object for the new user to generate a token
+        Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser, null, savedUser.getAuthorities());
+        String accessToken = jwtTokenProvider.generateToken(authentication);
 
-        return new AuthResponse(
-                accessToken,
-                "Bearer",
-                user.getId(),
-                user.getEmail(),
-                user.getRole().name(),
-                user.getContactNumber(),
-                "Registration successful!"
-        );
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .build();
     }
 
+    /**
+     * Authenticates an existing user and returns a JWT.
+     */
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        
+        String accessToken = jwtTokenProvider.generateToken(authentication);
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        AppUser authenticatedUser = (AppUser) authentication.getPrincipal();
-
-        String accessToken = jwtTokenProvider.generateToken(authentication); // <--- Use jwtTokenProvider
-
-        return new AuthResponse(
-                accessToken,
-                "Bearer",
-                authenticatedUser.getId(),
-                authenticatedUser.getEmail(),
-                authenticatedUser.getRole().name(),
-                authenticatedUser.getContactNumber(),
-                "Login successful!"
-        );
-    }
-
-    public AuthResponse registerAdmin(RegisterRequest registerRequest) {
-        if (appUserRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException("Email '" + registerRequest.getEmail() + "' is already taken.");
-        }
-
-        AppUser admin = AppUser.builder()
-                .email(registerRequest.getEmail())
-                .password(passwordEncoder.encode(registerRequest.getPassword()))
-                .contactNumber(registerRequest.getContactNumber())
-                .role(Role.ROLE_ADMIN)
+        return AuthResponse.builder()
+                .accessToken(accessToken)
                 .build();
-
-        appUserRepository.save(admin);
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String accessToken = jwtTokenProvider.generateToken(authentication); // <--- Use jwtTokenProvider
-
-        return new AuthResponse(
-                accessToken,
-                "Bearer",
-                admin.getId(),
-                admin.getEmail(),
-                admin.getRole().name(),
-                admin.getContactNumber(),
-                "Admin registration successful!"
-        );
     }
 }

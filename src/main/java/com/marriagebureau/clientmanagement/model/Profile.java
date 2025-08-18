@@ -1,5 +1,6 @@
 package com.marriagebureau.clientmanagement.model;
 
+import com.marriagebureau.clientmanagement.model.enums.*;
 import com.marriagebureau.usermanagement.model.AppUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,56 +15,80 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 
-@Entity
-@Table(name = "client_profiles") // Renamed table for clarity
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class) // For automatic timestamps
+@Entity
+@Table(name = "client_profiles")
+@EntityListeners(AuditingEntityListener.class)
 public class Profile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // --- RELATIONSHIP CHANGE ---
-    // Switched from @OneToOne to @ManyToOne.
-    // Many client profiles can now belong to one broker.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "broker_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "broker_id", nullable = false)
     private AppUser broker;
 
     // --- Core Personal Details ---
-    @Column(name = "full_name", nullable = false)
+    @Column(nullable = false)
     private String fullName;
     private LocalDate dateOfBirth;
-
     @Enumerated(EnumType.STRING)
     private Gender gender;
-
     @Enumerated(EnumType.STRING)
     private MaritalStatus maritalStatus;
-
     private Integer heightCm;
 
     // --- Cultural/Background Details ---
     private String religion;
     private String caste;
     private String subCaste;
+    @Enumerated(EnumType.STRING)
+    private MotherTongue motherTongue;
 
-    // ... other fields remain the same ...
-    // education, occupation, income, diet, habits, aboutMe, photoUrl etc.
+    // --- Location ---
+    private String country;
+    private String state;
+    private String city;
+    
+    // --- Physical Attributes ---
+    @Enumerated(EnumType.STRING)
+    private Complexion complexion;
+    @Enumerated(EnumType.STRING)
+    private BodyType bodyType;
+
+    // --- Professional/Educational Details ---
+    private String education;
+    private String occupation;
+    private Double annualIncome;
+
+    // --- Lifestyle & Habits ---
+    @Enumerated(EnumType.STRING)
+    private Diet diet;
+    @Enumerated(EnumType.STRING)
+    private SmokingHabit smokingHabit;
+    @Enumerated(EnumType.STRING)
+    private DrinkingHabit drinkingHabit;
+
+    // --- About Me & Photos ---
+    @Column(length = 1000)
+    private String aboutMe;
+    private String photoUrl;
+
+    @Builder.Default
+    private boolean isActive = true;
 
     // --- Preferred Partner Criteria ---
     private Integer preferredPartnerMinAge;
     private Integer preferredPartnerMaxAge;
-    // ... other partner preference fields ...
-
-    // --- Account Status & Timestamps ---
-    @Builder.Default
-    private boolean isActive = true;
-
+    private String preferredPartnerReligion;
+    private String preferredPartnerCaste;
+    private Integer preferredPartnerMinHeightCm;
+    private Integer preferredPartnerMaxHeightCm;
+    
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdDate;
@@ -72,7 +97,6 @@ public class Profile {
     @Column(insertable = false)
     private LocalDateTime lastUpdatedDate;
 
-    // --- Custom Getter for Age ---
     public Integer getAge() {
         if (this.dateOfBirth != null) {
             return Period.between(this.dateOfBirth, LocalDate.now()).getYears();
