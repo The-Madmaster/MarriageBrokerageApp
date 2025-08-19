@@ -5,7 +5,7 @@ CREATE TABLE app_users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     contact_number VARCHAR(255),
-    role VARCHAR(255) NOT NULL,
+    role VARCHAR(255) NOT NULL, -- <-- THIS LINE WAS MISSING
     account_non_expired BOOLEAN NOT NULL DEFAULT TRUE,
     account_non_locked BOOLEAN NOT NULL DEFAULT TRUE,
     credentials_non_expired BOOLEAN NOT NULL DEFAULT TRUE,
@@ -30,7 +30,6 @@ CREATE TABLE broker_profiles (
     FOREIGN KEY (app_user_id) REFERENCES app_users(id) ON DELETE CASCADE
 );
 
--- THIS IS THE COMPLETE VERSION OF THE CLIENT_PROFILES TABLE
 CREATE TABLE client_profiles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     broker_id BIGINT NOT NULL,
