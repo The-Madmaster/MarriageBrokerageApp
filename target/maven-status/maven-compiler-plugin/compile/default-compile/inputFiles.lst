@@ -1,5 +1,8 @@
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/ActiveProfiles.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/MarriageBureauSoftwareApplication.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/admin/controller/AdminDashboardController.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/admin/dto/AdminDashboardStatsDTO.java
+/workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/admin/service/AdminDashboardService.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/brokermanagement/controller/BrokerProfileController.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/brokermanagement/dto/BrokerProfileResponse.java
 /workspaces/marriage-brokerage-app/src/main/java/com/marriagebureau/brokermanagement/dto/CreateBrokerProfileRequest.java
