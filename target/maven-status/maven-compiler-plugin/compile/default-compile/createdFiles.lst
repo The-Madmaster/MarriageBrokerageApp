@@ -1,3 +1,4 @@
+com/marriagebureau/admin/controller/AdminDashboardController.class
 com/marriagebureau/clientmanagement/controller/ClientProfileController.class
 com/marriagebureau/clientmanagement/model/enums/BodyType.class
 com/marriagebureau/brokermanagement/dto/UpdateBrokerProfileRequest.class
@@ -33,10 +34,12 @@ com/marriagebureau/dto/ClientSubDTO.class
 com/marriagebureau/interest/dto/InterestResponseDTO.class
 com/marriagebureau/brokermanagement/controller/BrokerProfileController.class
 com/marriagebureau/interest/controller/InterestController.class
+com/marriagebureau/admin/dto/AdminDashboardStatsDTO.class
 com/marriagebureau/security/SecurityConfig.class
 com/marriagebureau/dto/TaskDTO.class
 com/marriagebureau/usermanagement/dto/AuthResponse.class
 com/marriagebureau/dto/MatchDTO.class
+com/marriagebureau/admin/service/AdminDashboardService.class
 com/marriagebureau/interest/model/InterestStatus.class
 com/marriagebureau/clientmanagement/dto/ProfileSearchRequest.class
 com/marriagebureau/usermanagement/exception/ResourceNotFoundException.class
@@ -58,6 +61,7 @@ com/marriagebureau/brokermanagement/model/BrokerProfile$BrokerProfileBuilder.cla
 com/marriagebureau/clientmanagement/model/Profile.class
 com/marriagebureau/dto/ClientDTO.class
 com/marriagebureau/matches/dto/MatchResultDto.class
+com/marriagebureau/admin/dto/AdminDashboardStatsDTO$AdminDashboardStatsDTOBuilder.class
 com/marriagebureau/config/CorsConfig.class
 com/marriagebureau/usermanagement/service/AppUserService.class
 com/marriagebureau/config/ApplicationConfig.class

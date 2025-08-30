@@ -1,10 +1,11 @@
-// src/main/java/com/marriagebureau/security/SecurityConfig.java
+// File: src/main/java/com/marriagebureau/security/SecurityConfig.java
 package com.marriagebureau.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider; // NEW: Import AuthenticationProvider
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,75 +15,84 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
-@EnableWebSecurity // Enables Spring Security's web security support
-@EnableMethodSecurity // Enables @PreAuthorize, @PostAuthorize, @Secured, @RolesAllowed annotations
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final AuthenticationProvider authenticationProvider; // NEW: Declare AuthenticationProvider
+    private final AuthenticationProvider authenticationProvider;
 
-    // Constructor to inject the JwtAuthenticationEntryPoint, JwtAuthenticationFilter,
-    // and AuthenticationProvider.
-    // Spring will automatically inject these as they are @Components/@Beans
     public SecurityConfig(
             JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            AuthenticationProvider authenticationProvider // NEW: Inject AuthenticationProvider
+            AuthenticationProvider authenticationProvider
     ) {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.authenticationProvider = authenticationProvider; // NEW: Assign to field
+        this.authenticationProvider = authenticationProvider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        // Exposes the AuthenticationManager as a Bean for direct use (e.g., in AuthController)
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+            "https://upgraded-yodel-pw6qp64w5qrf9657-5173.app.github.dev",
+            "https://upgraded-yodel-pw6qp64w5qrf9657-8080.app.github.dev"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    // --- NEW SECURITY FILTER CHAIN FOR PUBLIC RESOURCES ---
+    @Bean
+    @Order(1) // This ensures this filter chain is processed first
+    public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
         http
-            // Disable CSRF for stateless REST APIs, as JWTs are inherently protected against CSRF attacks
+            .securityMatcher("/", "/assets/**", "/api/auth/**")
             .csrf(AbstractHttpConfigurer::disable)
-            // Configure exception handling for authentication failures
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-            // Set session management to stateless, meaning no HTTP session will be created or used by Spring Security
-            // This is crucial for a JWT-based application
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // Define authorization rules for HTTP requests
             .authorizeHttpRequests(authorize -> authorize
-                // Permit access to authentication endpoints (login, register, etc.)
-                .requestMatchers("/api/auth/**").permitAll()
-                // Permit access to H2 Console for development/testing
-                // IMPORTANT: In production, either remove this or restrict access significantly
+                .anyRequest().permitAll()
+            );
+        return http.build();
+    }
+
+    // --- MAIN SECURITY FILTER CHAIN FOR AUTHENTICATED ACCESS ---
+    @Bean
+    @Order(2) // This will handle all other requests
+    public SecurityFilterChain authenticatedFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(withDefaults())
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll()
-                // Permit access to common static resources (if serving a frontend directly from Spring Boot)
-                .requestMatchers(
-                    AntPathRequestMatcher.antMatcher("/favicon.ico"),
-                    AntPathRequestMatcher.antMatcher("/"),
-                    AntPathRequestMatcher.antMatcher("/index.html"),
-                    AntPathRequestMatcher.antMatcher("/static/**"), // Catch all under static
-                    AntPathRequestMatcher.antMatcher("/css/**"),
-                    AntPathRequestMatcher.antMatcher("/js/**"),
-                    AntPathRequestMatcher.antMatcher("/images/**")
-                ).permitAll()
-                // All other requests require authentication
                 .anyRequest().authenticated()
             )
-            // NEW: Add the AuthenticationProvider to the HttpSecurity configuration
-            // This explicitly tells Spring Security to use your custom provider
             .authenticationProvider(authenticationProvider)
-            // Add the JWT filter before the UsernamePasswordAuthenticationFilter in the Spring Security filter chain.
-            // This ensures that the JWT is processed and the SecurityContext is populated before Spring Security's
-            // default authentication mechanisms kick in, which would otherwise try to authenticate based on sessions/cookies.
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // Enable H2 Console frames for proper display within a browser
-        // This is necessary because H2 Console uses iframes, and Spring Security's defaults might block them
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();

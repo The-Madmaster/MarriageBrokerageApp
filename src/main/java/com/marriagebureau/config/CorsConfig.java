@@ -12,8 +12,8 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // Apply CORS to all endpoints
                 .allowedOrigins(
-                    "https://reimagined-space-invention-r6xvpxq6qj42p75j-8080.app.github.dev", // Your backend's own URL (if accessed directly)
-                    "https://reimagined-space-invention-r6xvpxq6qj42p75j-5173.app.github.dev"  // ⭐ Add your frontend's Vite development URL here
+                    "https://reimagined-space-invention-r6xvpxq6qj42p75j-8080.app.github.dev",
+                    "https://reimagined-space-invention-r6xvpxq6qj42p75j-5173.app.github.dev"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Specify allowed HTTP methods
                 .allowedHeaders("*") // Allow all headers
